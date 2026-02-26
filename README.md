@@ -125,7 +125,7 @@ While reviewing Sysmon logs, I noticed that `Superstar_MemberCard.tiff.exe` acce
 
 The timing and suspicious file activity strongly suggest these files were staged and compressed prior to exfiltration.
 
-`Data Exfiltration Evidence`
+**Data Exfiltration Evidence**
 
 Further Sysmon Event ID 1 (Process Creation) analysis revealed execution of WinSCP using the following command:
 - C:\Users\Public\HelpDesk-Tools\WinSCP.com /script=C:\Users\Public\HelpDesk-Tools\maintenanceScript.txt
