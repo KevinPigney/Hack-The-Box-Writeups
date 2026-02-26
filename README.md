@@ -15,7 +15,7 @@ events that have occurred on the victim's workstation.
 
 Based on the initial Information, I began by reviewing the user's email artifacts. I navigated to: `C:\Users\ash.williams\AppData\Local\Microsoft\Outlook`
 
-![Malicious Email in Inbox](./screenshots/Task 1 - Email.PNG)
+![Malicious Email in Inbox](./screenshots/Task1-Email.PNG)
 
 Within this directory, I identified an Outlook data file: `ashwilliams012100@gmail.com.ost`
 
