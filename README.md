@@ -15,11 +15,13 @@ events that have occurred on the victim's workstation.
 
 Based on the initial Information, I began by reviewing the user's email artifacts. I navigated to: `C:\Users\ash.williams\AppData\Local\Microsoft\Outlook`
 
-![](./screenshots/Task1-Email.PNG)
+![](./screenshots/Task1-OST-File.PNG)
 
 Within this directory, I identified an Outlook data file: `ashwilliams012100@gmail.com.ost`
 
 To review the contents, I loaded the OST file into an OST/PST viewer (I would recommend finding a better OST/PST tool). The user's inbox contained five emails, once of which immediately stood out as suspicious.
+
+![](./screenshots/Task1-Email.PNG)
 
 Suspicious Email Details:
 - Sender: `ImSecretlyYours@proton.me`
@@ -34,7 +36,7 @@ The email body used romantic language to entice the user into downloading a so-c
 
 Further analysis showed that the file `Superstar_MembershipCard.tiff.exe` was downloaded and executed from the user's Downloads directory.
 
-![[prefetch execution.png]]
+![](./screenshots/prefetch-execution.PNG)
 
 Execution:
 - File Path: `C:\Users\ash.williams\Downloads\Superstar_MemberCard.tiff.exe`
@@ -51,7 +53,7 @@ This activity aligns with MITRE ATT&CK T1204 - User Execution, as the malware re
 
 After execution of the file, the user conducted web searches related to the theme of the phishing email. Reviewing Firefox artifacts using DB Browser for SQLite, I examined the `moz_formhistory` table and identified five total search entries.
 
-![[Task 6 - Searchbar-history.png]]
+![](./screenshots/Task6-Searchbar-history.PNG)
 
 Two searches were particularly notable to this incident:
 - "what to wear to impress date"
@@ -64,8 +66,8 @@ These searches support the conclusion that the social engineering attempt was su
 
 Shortly after execution, the system sent an identical email to the user's entire contact list.
 
-![[Task 7 - ClientSubmitTime.png]]
-![[Task 8 - Contacts.png]]
+![](./screenshots/Task7-ClientSubmitTime.PNG)
+![](./screenshots/Task8-Contacts.PNG)
 Email Metadata Findings:
 - `ClientSubmitTime`: `2024-03-13 10:47:51`
 - Recipients: 58 contacts (excluding the victim's own address)
@@ -83,9 +85,9 @@ This represents a significant security risk, as any process capable of accessing
 
 To gain a better understanding of the post-execution behavior, I filtered Sysmon logs to focus on activity where `Superstar_Membership.tiff.exe` appeared as the source image. This revealed several interactions with legitimate Windows binaries.
 
-![[Task 9 - Timeline Filter.png]]
+![](./screenshots/Task9-TimelineFilter.PNG)
 
-![[Task 9 - Legit Program.png]]
+![](./screenshots/Task9-LegitProgram.PNG)
 
 One notable example was `nltest.exe`, a legitimate tool commonly used for domain controller enumeration. Its execution suggests the malware attempted to gather information about the environment.
 
@@ -94,7 +96,7 @@ One notable example was `nltest.exe`, a legitimate tool commonly used for domain
 
 During Sysmon analysis, I observed `Superstar_Membership.tiff.exe` making a DNS query to `us.softradar.com`. Shortly after this query, a new directory appeared: `C:\Users\Public\HelpDesk-Tools\`
 
-![[Task 10-11 Data.png]]
+![](./screenshots/Task10-11Data.PNG)
 
 This directory contained:
 - `license.txt`
@@ -111,7 +113,7 @@ The structure and naming of this directory resemble a legitimate administrative 
 While reviewing Sysmon logs, I noticed that `Superstar_MemberCard.tiff.exe` accessed numerous sensitive files located under public directories. Later correlation showed at least 26 files being accessed prior to the appearance of compressed archives:
 - `WB-WS-01.zip`
 - `WinSCP.zip`
-![[Task 13 - Data.png]]
+![](./screenshots/Task13-Data.PNG)
 
 The timing and suspicious file activity strongly suggest these files were staged and compressed prior to exfiltration.
 
@@ -120,7 +122,7 @@ The timing and suspicious file activity strongly suggest these files were staged
 Further Sysmon Event ID 1 (Process Creation) analysis revealed execution of WinSCP using the following command:
 - C:\Users\Public\HelpDesk-Tools\WinSCP.com /script=C:\Users\Public\HelpDesk-Tools\maintenanceScript.txt
 
-![[Task 14 - Data.png]]
+![](./screenshots/Task14-Data.PNG)
 
 Moments after this execution, Sysmon Event ID 3 (Network Connection) logged an outbound connection:
 - Destination IP: `35.169.66.138`
