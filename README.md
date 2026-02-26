@@ -11,6 +11,7 @@ breach. Focus on examining the artifacts provided by the customer to identify si
 events that have occurred on the victim's workstation.
 
 
+
 **Initial Email Review**
 
 Based on the initial Information, I began by reviewing the user's email artifacts. I navigated to: `C:\Users\ash.williams\AppData\Local\Microsoft\Outlook`
@@ -32,6 +33,7 @@ Suspicious Email Details:
 The email body used romantic language to entice the user into downloading a so-called "digital membership card" for access to a private club, where the threat actor and the victim can meet. Aligning with common social engineering techniques designed to lower user suspicion and encourage execution of an attachment.
 
 
+
 **Malicious File Execution**
 
 Further analysis showed that the file `Superstar_MembershipCard.tiff.exe` was downloaded and executed from the user's Downloads directory.
@@ -49,6 +51,7 @@ To gain further context around this activity, I correlated Prefetch data with `$
 This activity aligns with MITRE ATT&CK T1204 - User Execution, as the malware required user interaction to run.
 
 
+
 **Post-Execution User Activity**
 
 After execution of the file, the user conducted web searches related to the theme of the phishing email. Reviewing Firefox artifacts using DB Browser for SQLite, I examined the `moz_formhistory` table and identified five total search entries.
@@ -60,6 +63,7 @@ Two searches were particularly notable to this incident:
 - "Superstar café membership"
 
 These searches support the conclusion that the social engineering attempt was successful in convincing the user the email was legitimate.
+
 
 
 **Malicious Outbound Email Activity**
@@ -82,6 +86,7 @@ While reviewing the OST file, I identified a draft email created by the user tha
 This represents a significant security risk, as any process capable of accessing the OST file could potentially extract sensitive credentials. While direct evidence of exfiltration of these credentials was not observed in the available artifacts, their presence within the scope of the incident increases the impact of the compromise.
 
 
+
 **Host-Level Behavioral Analysis**
 
 To gain a better understanding of the post-execution behavior, I filtered Sysmon logs to focus on activity where `Superstar_Membership.tiff.exe` appeared as the source image. This revealed several interactions with legitimate Windows binaries.
@@ -91,6 +96,7 @@ To gain a better understanding of the post-execution behavior, I filtered Sysmon
 ![](./screenshots/Task9-LegitProgram.PNG)
 
 One notable example was `nltest.exe`, a legitimate tool commonly used for domain controller enumeration. Its execution suggests the malware attempted to gather information about the environment.
+
 
 
 **Network Activity & Tool Staging**
@@ -107,6 +113,7 @@ This directory contained:
 - `maintenanceScript.txt`
 
 The structure and naming of this directory resemble a legitimate administrative toolkit, consistent with MITRE ATT&CK T1036 - Masquerading. Based on timestamps and network activity, it is likely these tools were staged after the DNS request.
+
 
 
 **Data Staging & Compression Indicators**
@@ -133,6 +140,7 @@ Moments after this execution, Sysmon Event ID 3 (Network Connection) logged an o
 The Use of a `.txt` script file to store WinSCP commands suggests an attempt to blend malicious activity into seemingly administrative files.
 
 
+
 **Final Assessment**
 
 Based on the available artifacts, the investigation supports the following conclusions:
@@ -142,6 +150,7 @@ Based on the available artifacts, the investigation supports the following concl
 - Sensitive files were likely compressed and exfiltrated using WinSCP
 
 While not every stage of exfiltration is directly observable, the consistency across host, email, and network artifacts strongly supports a full compromise of the workstation.
+
 
 
 **Next Steps**
