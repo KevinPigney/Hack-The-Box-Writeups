@@ -68,6 +68,7 @@ Shortly after execution, the system sent an identical email to the user's entire
 
 ![](./screenshots/Task7-ClientSubmitTime.PNG)
 ![](./screenshots/Task8-Contacts.PNG)
+
 Email Metadata Findings:
 - `ClientSubmitTime`: `2024-03-13 10:47:51`
 - Recipients: 58 contacts (excluding the victim's own address)
