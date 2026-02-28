@@ -13,7 +13,7 @@ My primary objective of this investigation was to determine:
 - What actions were taken on the system afterward
 - What evidence exists to support user interaction, execution, and post-execution activity
 
-<br>
+
 
 ### Tools Used
 
@@ -22,7 +22,7 @@ These are the tools I found useful in this investigation:
 - DB Browser for SQLite
 - Zimmerman Suite (EvtxeCmd, PECmd, MFTECmd, Timeline Explorer)
 
----
+<br>
 
 # HeartBreaker Sherlock - DFIR Write-up
 
