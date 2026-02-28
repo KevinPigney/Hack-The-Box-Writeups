@@ -36,7 +36,7 @@ comprehending the implications, and uncovering any possible connections to the d
 breach. Focus on examining the artifacts provided by the customer to identify significant
 events that have occurred on the victim's workstation.
 
-
+<br>
 
 **Initial Email Review**
 
@@ -67,7 +67,7 @@ Suspicious Email Details:
 
 The email body used romantic language to entice the user into clicking on an embedded link and downloading a so-called "digital membership card" for access to a private club, where the threat actor and the victim can meet. Aligning with common social engineering techniques designed to lower user suspicion and encourage the execution of an attachment.
 
-
+<br>
 
 **Malicious File Execution**
 
@@ -90,7 +90,7 @@ To gain further context around this file, I correlated Prefetch with `$MFT`, `$J
 
 This activity aligns with MITRE ATT&CK T1204 - User Execution, as the malware required user interaction to run.
 
-
+<br>
 
 **Post-Execution User Activity**
 
@@ -109,7 +109,7 @@ Although there was no evidence indicating further downloads, two searches were p
 
 These searches stood out as they appeared to be legitimate, user-initiated activity, indicating that the user was successfully socially engineered, while showing no evidence of attacker-driven behavior or additional malicious downloads following the initial compromise.
 
-
+<br>
 
 **Malicious Outbound Email Activity**
 
@@ -128,7 +128,7 @@ Email Metadata Findings:
 
 This provides supporting evidence that the malware was capable of accessing the user's email data and automating outbound messages, increasing the scope of potential compromise.
 
-
+<br>
 
 **Credential Exposure Observations**
 
@@ -138,7 +138,7 @@ Earlier in the investigation, Sysmons logs indicated that the malicious file int
 
 While no direct evidence of credential exfiltration was observed in the available artifacts, the presence of sensitive credentials within an accessible mailbox significantly increases the potential impact of the compromise and represents a serious security risk.
 
-
+<br>
 
 **Host-Level Behavioral Analysis**
 
@@ -152,7 +152,7 @@ During this review, I observed that the malicious process interacted with `nltes
 
 Although `nltest.exe` is a legitimate administrative tool, it is frequently abused by threat actors during post-compromise activity to gather information about the domain environment. Its presence in this context suggests the malware may have been attempting to enumerate domain infrastructure or assess the surrounding environment as part of the post-execution behavior and further internal reconnaissance.
 
-
+<br>
 
 **Network Activity & Tool Staging**
 
@@ -171,7 +171,7 @@ The naming and structure of this directory closely resemble a legitimate toolkit
 
 When correlated with the DNS request and file creation timestamps, the evidence suggests these tools were staged on the system following the network activity, indicating internal preparation for potential follow-up activity.
 
-
+<br>
 
 **Data Staging & Compression Indicators**
 
@@ -184,6 +184,8 @@ Further correlation showed that at least 26 files were accessed before the creat
 ![](./screenshots/Task13-Data.PNG)
 
 This pattern of file access followed by the creation of compressed archives suggests that these files were intentionally staged and packaged together. This behavior is consistent with pre-exfiltration preparation, where data is collected into one directory and then compressed before being transferred off the system and through the network.
+
+<br>
 
 **Data Exfiltration Evidence**
 
@@ -199,7 +201,7 @@ Shortly after this execution, Sysmon Event ID 3 (Network Connection) logged an o
 
 The use of a `.txt` script file to store WinSCP commands suggests an attempt to automate file transfer activity while blending malicious behavior into what appears to be legitimate administrative tooling. When viewed alongside earlier file staging and compression activity, this pattern strongly supports the conclusion that WinSCP was used as part of data exfiltration.
 
-
+<br>
 
 **Final Assessment**
 
@@ -211,7 +213,7 @@ Based on the available artifacts, the investigation supports the following concl
 
 While not every stage of exfiltration is directly observable, the consistency across host, email, and network artifacts strongly supports a full compromise of the workstation.
 
-
+<br>
 
 **Next Steps**
 
