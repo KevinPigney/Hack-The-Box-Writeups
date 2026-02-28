@@ -4,6 +4,8 @@ This write-up documents my investigation of the HeartBreaker Sherlock challenge 
 
 I've been trying to treat these Sherlock challenges like real-world DFIR scenarios, prioritizing investigative flow, artifact correlation, and validating assumptions instead of just flying through the answers.
 
+
+
 ### Objective
 
 My primary objective of this investigation was to determine:
@@ -11,7 +13,7 @@ My primary objective of this investigation was to determine:
 - What actions were taken on the system afterward
 - What evidence exists to support user interaction, execution, and post-execution activity
 
----
+
 
 ### Tools Used
 
@@ -19,6 +21,8 @@ These are the tools I found useful in this investigation:
 - OST/PST email analysis tools (Autopsy should work here too)
 - DB Browser for SQLite
 - Zimmerman Suite (EvtxeCmd, PECmd, MFTECmd, Timeline Explorer)
+
+---
 
 # HeartBreaker Sherlock - DFIR Write-up
 
