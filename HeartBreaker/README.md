@@ -1,7 +1,3 @@
-![](./screenshots/HeartBreaker.PNG)
-
-
-
 ### Introduction
 
 This write-up documents my investigation of the HeartBreaker Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge, these notes focus on how I approached this investigation, what artifacts I chose to analyze, and how I reasoned with the evidence as it becomes uncovered.
@@ -29,6 +25,8 @@ These are the tools I found useful in this investigation:
 <br>
 
 # HeartBreaker Sherlock - DFIR Write-up
+
+![](./screenshots/HeartBreaker.PNG)
 
 **Hack The Box Initial information:**
 
