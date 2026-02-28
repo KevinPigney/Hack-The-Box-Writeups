@@ -1,3 +1,7 @@
+![](./screenshots/Task1-OST-File.PNG)
+
+<br>
+
 ### Introduction
 
 This write-up documents my investigation of the HeartBreaker Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge, these notes focus on how I approached this investigation, what artifacts I chose to analyze, and how I reasoned with the evidence as it becomes uncovered.
