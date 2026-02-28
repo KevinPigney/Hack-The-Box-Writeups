@@ -11,6 +11,8 @@ My primary objective of this investigation was to determine:
 - What actions were taken on the system afterward
 - What evidence exists to support user interaction, execution, and post-execution activity
 
+
+
 ### Tools Used
 
 These are the tools I found useful in this investigation:
