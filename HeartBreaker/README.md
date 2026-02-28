@@ -1,17 +1,17 @@
-# Introduction
+### Introduction
 
 This write-up documents my investigation of the HeartBreaker Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge, these notes focus on how I approached this investigation, what artifacts I chose to analyze, and how I reasoned with the evidence as it becomes uncovered.
 
 I've been trying to treat these Sherlock challenges like real-world DFIR scenarios, prioritizing investigative flow, artifact correlation, and validating assumptions instead of just flying through the answers.
 
-# Objective
+### Objective
 
 My primary objective of this investigation was to determine:
 - How the initial compromise occurred
 - What actions were taken on the system afterward
 - What evidence exists to support user interaction, execution, and post-execution activity
 
-# Tools Used
+### Tools Used
 
 These are the tools I found useful in this investigation:
 - OST/PST email analysis tools (Autopsy should work here too)
