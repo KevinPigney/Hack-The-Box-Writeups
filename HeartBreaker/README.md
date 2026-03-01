@@ -1,8 +1,8 @@
 ### Introduction
 
-This write-up documents my investigation of the HeartBreaker Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge, these notes focus on how I approached this investigation, what artifacts I chose to analyze, and how I reasoned with the evidence as it becomes uncovered.
+This write-up documents my investigation of the HeartBreaker Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge like other write-ups, these notes focus more on how I personally approached this investigation, what artifacts I chose to analyze, and how I reasoned with the evidence, and document my findings for others to read.
 
-I've been trying to treat these Sherlock challenges like real-world DFIR scenarios, prioritizing investigative flow, artifact correlation, and validating assumptions instead of just flying through the answers.
+I've been trying to treat these Sherlock challenges like real-world DFIR scenarios, prioritizing my own investigative flow, artifact correlation, and validating assumptions instead of just flying through the answers.
 
 
 
