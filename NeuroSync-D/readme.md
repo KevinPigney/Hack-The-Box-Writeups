@@ -11,8 +11,6 @@ This environment simulates a distributed BCI (Brain-Computer Interface) platform
 
 The device logs are not representative of real medical telemetry. Instead, they resemble simplified application-layer logs typical of a prototype or research environment running on a Linux-based embedded system.
 
----
-
 ## Initial Information
 
 The application is running:
@@ -32,7 +30,6 @@ This version is vulnerable to:
 - Suspicious middleware-related headers
 - Repeated `401 → 200` transitions
 
----
 
 ## Attack Timeline
 
@@ -46,7 +43,6 @@ This likely exposed:
 - Application structure
 - Potential version info
 
----
 
 ### 2. Endpoint Discovery (11:38:05)
 
@@ -58,7 +54,6 @@ This likely exposed:
 
 Strong indicator of **auth bypass via CVE-2025-29927**
 
----
 
 ### 3. Exploitation (Middleware Bypass)
 
@@ -70,7 +65,6 @@ This header manipulation allowed the attacker to:
 - Bypass authentication
 - Access protected API routes directly
 
----
 
 ### 4. SSRF + Internal Discovery (11:38:52)
 
@@ -80,7 +74,6 @@ This header manipulation allowed the attacker to:
 
 Attacker begins probing internal endpoints.
 
----
 
 ### 5. Endpoint Enumeration + LFI (11:39:01)
 
@@ -97,7 +90,6 @@ Files accessed:
 
 Significant information disclosure
 
----
 
 ### 6. Redis Injection → RCE (11:39:26)
 
