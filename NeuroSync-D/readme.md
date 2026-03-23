@@ -1,5 +1,7 @@
 # NeuroSync-D - DFIR Write-up
+
 <br>
+
 ## Overview
 
 This environment simulates a distributed BCI (Brain-Computer Interface) platform consisting of:
