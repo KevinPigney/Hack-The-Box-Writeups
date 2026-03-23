@@ -6,6 +6,8 @@ I did not go too deep into explaining my thought process in this one since the p
 
 It was also a nice change of pace working in a Linux-based environment instead of Windows, which is what I am more used to. Overall, a quick but enjoyable Sherlock that still demonstrates how a full compromise can be identified through basic log analysis.
 
+Also experimenting with a different approach to my typical note-taking, by trying to make them slightly more concise and easier to quickly scan/read
+
 <br>
 
 # NeuroSync-D - DFIR Write-up
