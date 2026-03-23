@@ -32,7 +32,7 @@ This version is vulnerable to:
 **Forensic indicators:**
 - Direct access to protected endpoints without login
 - Suspicious middleware-related headers
-- Repeated `401 → 200` transitions
+- Repeated `401 -> 200` transitions
 
 
 ## Attack Timeline
