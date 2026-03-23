@@ -59,6 +59,7 @@ This likely exposed:
 
 Strong indicator of **auth bypass via CVE-2025-29927**
 
+![](./screenshots/Analytics.PNG)
 
 ### 3. Exploitation (Middleware Bypass)
 
