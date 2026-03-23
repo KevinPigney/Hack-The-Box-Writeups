@@ -1,3 +1,13 @@
+## Introduction
+
+This particular Sherlock was very straightforward and quick to solve. The dataset is small and consists entirely of simple `.log` files that can be reviewed with basic tools like a text editor, so no specialized tooling was really needed. Because of this, it is a great starting point for anyone new to Sherlock challenges who wants to understand how they work and how to follow an attack chain.
+
+I did not go too deep into explaining my thought process in this one since the pivots are pretty self-explanatory as you move through the logs. It is easy to follow the progression of the attack from initial access to full compromise.
+
+It was also a nice change of pace working in a Linux-based environment instead of Windows, which is what I am more used to. Overall, a quick but enjoyable Sherlock that still demonstrates how a full compromise can be identified through basic log analysis.
+
+<br>
+
 # NeuroSync-D - DFIR Write-up
 
 ![](./screenshots/title.PNG)
