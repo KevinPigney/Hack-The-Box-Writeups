@@ -94,6 +94,7 @@ Files accessed:
 
 Significant information disclosure
 
+![](./screenshots/Local-File-Inclusion.PNG)
 
 ### 6. Redis Injection -> RCE (11:39:26)
 
