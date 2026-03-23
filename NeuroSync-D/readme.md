@@ -12,7 +12,6 @@ It was also a nice change of pace working in a Linux-based environment instead o
 
 ![](./screenshots/title.PNG)
 
-<br>
 
 ## Overview
 
