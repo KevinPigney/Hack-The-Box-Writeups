@@ -1,4 +1,4 @@
-# NeuroSync BCI – Incident Analysis (Sherlock)
+# NeuroSync-D - DFIR Write-up
 
 ## Overview
 
@@ -13,7 +13,7 @@ The device logs are not representative of real medical telemetry. Instead, they 
 
 ---
 
-## Initial Finding
+## Initial Information
 
 The application is running:
 
@@ -82,7 +82,7 @@ Attacker begins probing internal endpoints.
 
 ---
 
-### 5. Endpoint Enumeration + LFI
+### 5. Endpoint Enumeration + LFI (11:39:01)
 
 - `/logs` endpoint identified
 - Used to read sensitive files via **Local File Inclusion**
@@ -99,7 +99,7 @@ Significant information disclosure
 
 ---
 
-### 6. Redis Injection → RCE
+### 6. Redis Injection → RCE (11:39:26)
 
 - Attacker crafts malicious command using gathered data
 - Injects into Redis queue
