@@ -1,5 +1,7 @@
 # NeuroSync-D - DFIR Write-up
 
+![](./screenshots/title.PNG)
+
 <br>
 
 ## Overview
