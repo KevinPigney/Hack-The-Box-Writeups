@@ -23,7 +23,7 @@ This version is vulnerable to:
 
 ### CVE-2025-29927
 - Critical auth bypass in middleware-based apps
-- Caused by manipulation of internal request headers
+- Caused by the manipulation of internal request headers
 - Allows attackers to **skip authentication entirely**
 - No credentials required
 
@@ -93,7 +93,7 @@ Files accessed:
 Significant information disclosure
 
 
-### 6. Redis Injection → RCE (11:39:26)
+### 6. Redis Injection -> RCE (11:39:26)
 
 - Attacker crafts malicious command using gathered data
 - Injects into Redis queue
