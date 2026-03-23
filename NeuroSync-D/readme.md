@@ -34,6 +34,7 @@ This version is vulnerable to:
 - Suspicious middleware-related headers
 - Repeated `401 -> 200` transitions
 
+![](./screenshots/CVE.PNG)
 
 ## Attack Timeline
 
