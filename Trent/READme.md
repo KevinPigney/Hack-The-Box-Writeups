@@ -44,7 +44,7 @@ You will be given network traffic logs from one of the impacted machines. Your t
 
 <br>
 
-**Initial Triage & Traffic Scoping**
+### Initial Triage & Traffic Scoping
 
 I began by reviewing the Protocol Hierarchy to understand the overall traffic composition. The capture was dominated by:
 - IPv4
