@@ -18,7 +18,7 @@ The primary objectives of this investigation were to determine:
 - Whether command execution or remote control occurred
 - What indicators suggest persistence and or command-and-control (C2)
 
-Tools Used
+### Tools Used
 - Wireshark (surprise!)
 	- Built-in Wireshark features:
 	- Protocol Hierarchy
