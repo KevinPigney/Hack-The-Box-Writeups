@@ -28,6 +28,8 @@ Tools Used
 
 # Trent Sherlock - DFIR Write-up
 
+![](./Screenshots/Trent.PNG)
+
 ### Initial Triage & Traffic Scoping
 
 I began by reviewing the Protocol Hierarchy to understand the overall traffic composition. The capture was dominated by:
@@ -43,6 +45,8 @@ Using Conversations, I identified the primary communicating systems:
 
 - 192.168.10.1 → Router (TEW-827DRU, Firmware 2.10)
 - 192.168.10.2 → Internal endpoint interacting with the router
+
+![](./Screenshots/top_talkers.PNG)
 
 To reduce noise, I scoped traffic with:
 - `ip.src == 192.168.10.2 && ip.dst == 192.168.10.1`
