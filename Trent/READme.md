@@ -9,6 +9,8 @@ Rather than presenting a step-by-step solution, this report focuses on:
 - How I reconstructed attacker behavior from raw traffic
 I try to approach these challenges as real-world incident response scenarios, emphasizing traffic analysis, protocol inspection, and behavioral correlation instead of simply picking out the answers to solve the Sherlock.
 
+
+
 ### Objective
 
 The primary objectives of this investigation were to determine:
@@ -18,6 +20,8 @@ The primary objectives of this investigation were to determine:
 - Whether command execution or remote control occurred
 - What indicators suggest persistence and or command-and-control (C2)
 
+
+
 ### Tools Used
 - Wireshark (surprise!)
 	- Built-in Wireshark features:
@@ -25,6 +29,8 @@ The primary objectives of this investigation were to determine:
 	- TCP Streams
 	- Conversations
 	- Packet inspection and filtering
+
+<br>
 
 # Trent Sherlock - DFIR Write-up
 
@@ -34,6 +40,8 @@ The primary objectives of this investigation were to determine:
 The SOC team has identified suspicious lateral movement targeting router firmware from within the network. Anomalous traffic patterns and command execution have been detected on the router, indicating that an attacker already inside the network has gained unauthorized access and is attempting further exploitation.
 
 You will be given network traffic logs from one of the impacted machines. Your task is to conduct a thorough investigation to unravel the attacker's Techniques, Tactics, and Procedures (TTPs).
+
+<br>
 
 **Initial Triage & Traffic Scoping**
 
@@ -56,6 +64,8 @@ Using Conversations, I identified the primary communicating systems:
 To reduce noise, I scoped traffic with:
 - `ip.src == 192.168.10.2 && ip.dst == 192.168.10.1`
 This isolates inbound traffic to the router, which became the main point of the investigation.
+
+<br>
 
 ### Initial Access - Router Authentication Abuse
 
@@ -86,6 +96,8 @@ This behavior indicates:
 - No brute-force protection or account lockout
 This aligns with:
 - MITRE ATT&CK T1078 - Valid Accounts
+
+<br>
 
 ### Post-Authentication Activity – Command Injection
 
@@ -123,6 +135,7 @@ Mapped to:
 - MITRE ATT&CK T1059 - Command and Scripting Interpreter
 - MITRE ATT&CK T1190 - Exploit Public-Facing Application
 
+<br>
 
 ### Timeline of Events
 
@@ -133,6 +146,8 @@ Mapped to:
 | 15:53:27            | Successful login (blank password)  |
 | 15:56:16 - 16:08:08 | Command injection via `/apply.cgi` |
 | Shortly after       | Reverse shell callback initiated   |
+
+<br>
 
 ### Indicators of Compromise (IOCs)
 
@@ -164,6 +179,7 @@ The compromise was enabled by a combination of:
 3. **Lack of Input Sanitization**
     - Direct execution of user input
 
+<br>
 
 ### Final Assessment
 
@@ -176,6 +192,8 @@ Based on the available evidence, the investigation concludes:
 
 This represents a **full compromise of the router**, with attacker persistence achieved through interactive shell access.
 
+<br>
+
 ### Unanswered Questions
 
 While the PCAP provides strong visibility into the attack chain, several uncertainties remain:
@@ -183,6 +201,8 @@ While the PCAP provides strong visibility into the attack chain, several uncerta
 - Did the attacker perform lateral movement after compromise?
 - Was the external server hosting additional tooling?
 - Are all HTTP POST bodies fully captured in the PCAP?
+
+<br>
 
 ### Next Steps (If This Were a Live Incident)
 
