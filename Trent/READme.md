@@ -100,7 +100,7 @@ This aligns with:
 
 <br>
 
-### Post-Authentication Activity – Command Injection
+### Post-Authentication Activity - Command Injection
 
 After authentication, the attacker's behavior escalated significantly.
 
