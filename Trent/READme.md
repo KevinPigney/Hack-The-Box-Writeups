@@ -146,7 +146,7 @@ Mapped to:
 | `15:52:40 - 15:53:27` | Authentication attempts            |
 | `15:53:27`            | Successful login (blank password)  |
 | `15:56:16 - 16:08:08` | Command injection via `/apply.cgi` |
-| `Shortly after`      | Reverse shell callback initiated   |
+| Shortly after      | Reverse shell callback initiated   |
 
 <br>
 
