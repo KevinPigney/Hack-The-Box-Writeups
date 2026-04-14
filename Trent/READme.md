@@ -30,6 +30,11 @@ The primary objectives of this investigation were to determine:
 
 ![](./Screenshots/Trent.PNG)
 
+### Hack The Box Initial Information:
+The SOC team has identified suspicious lateral movement targeting router firmware from within the network. Anomalous traffic patterns and command execution have been detected on the router, indicating that an attacker already inside the network has gained unauthorized access and is attempting further exploitation.
+
+You will be given network traffic logs from one of the impacted machines. Your task is to conduct a thorough investigation to unravel the attacker's Techniques, Tactics, and Procedures (TTPs).
+
 ### Initial Triage & Traffic Scoping
 
 I began by reviewing the Protocol Hierarchy to understand the overall traffic composition. The capture was dominated by:
