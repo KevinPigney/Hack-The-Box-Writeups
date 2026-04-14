@@ -1,4 +1,4 @@
-###### **Introduction**
+### Introduction
 
 This write-up documents my investigation of the Trent Sherlock challenge on Hack The Box. Unlike my other host-based DFIR scenarios, this challenge only provided me with a packet capture (.pcap).
 
@@ -9,7 +9,7 @@ Rather than presenting a step-by-step solution, this report focuses on:
 - How I reconstructed attacker behavior from raw traffic
 I try to approach these challenges as real-world incident response scenarios, emphasizing traffic analysis, protocol inspection, and behavioral correlation instead of simply picking out the answers to solve the Sherlock.
 
-###### **Objective**
+### Objective
 
 The primary objectives of this investigation were to determine:
 
@@ -26,8 +26,9 @@ Tools Used
 	- Conversations
 	- Packet inspection and filtering
 
+# Trent Sherlock - DFIR Write-up
 
-###### **Initial Triage & Traffic Scoping**
+### Initial Triage & Traffic Scoping
 
 I began by reviewing the Protocol Hierarchy to understand the overall traffic composition. The capture was dominated by:
 - IPv4
@@ -47,7 +48,7 @@ To reduce noise, I scoped traffic with:
 - `ip.src == 192.168.10.2 && ip.dst == 192.168.10.1`
 This isolates inbound traffic to the router, which became the main point of the investigation.
 
-###### **Initial Access - Router Authentication Abuse**
+### Initial Access - Router Authentication Abuse
 
 **Login Interface Interaction**
 
@@ -77,7 +78,7 @@ This behavior indicates:
 This aligns with:
 - MITRE ATT&CK T1078 - Valid Accounts
 
-###### **Post-Authentication Activity – Command Injection**
+### Post-Authentication Activity – Command Injection
 
 After authentication, the attacker's behavior escalated significantly.
 
@@ -114,7 +115,7 @@ Mapped to:
 - MITRE ATT&CK T1190 - Exploit Public-Facing Application
 
 
-###### **Timeline of Events**
+### Timeline of Events
 
 | Time                | Activity                           |
 | ------------------- | ---------------------------------- |
@@ -124,7 +125,7 @@ Mapped to:
 | 15:56:16 - 16:08:08 | Command injection via `/apply.cgi` |
 | Shortly after       | Reverse shell callback initiated   |
 
-###### **Indicators of Compromise (IOCs)**
+### Indicators of Compromise (IOCs)
 
 **Payloads & Commands:**
 - `bash a1l4m.sh`
@@ -155,7 +156,7 @@ The compromise was enabled by a combination of:
     - Direct execution of user input
 
 
-###### **Final Assessment**
+### Final Assessment
 
 Based on the available evidence, the investigation concludes:
 
@@ -166,7 +167,7 @@ Based on the available evidence, the investigation concludes:
 
 This represents a **full compromise of the router**, with attacker persistence achieved through interactive shell access.
 
-###### **Unanswered Questions**
+### Unanswered Questions
 
 While the PCAP provides strong visibility into the attack chain, several uncertainties remain:
 - Was the router exposed beyond the internal network?
@@ -174,7 +175,7 @@ While the PCAP provides strong visibility into the attack chain, several uncerta
 - Was the external server hosting additional tooling?
 - Are all HTTP POST bodies fully captured in the PCAP?
 
-###### **Next Steps (If This Were a Live Incident)**
+### Next Steps (If This Were a Live Incident)
 
 - Immediately isolate and reset the compromised router
 - Disable or rotate all administrative credentials & disable blank passwords
