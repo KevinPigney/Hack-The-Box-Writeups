@@ -1,10 +1,10 @@
-## Introduction
+### Introduction
 
 This write-up documents my investigation of the **Jinkies** Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge like other write-ups, these notes focus more on how I personally approached this investigation, what artifacts I chose to analyze, how I reasoned with the evidence, and how I documented my findings for others to read.
 
 I've been trying to treat these Sherlock challenges like real-world DFIR scenarios, prioritizing my own investigative flow, artifact correlation, and validating assumptions instead of just flying through the answers.
 
-## Objective
+### Objective
 
 My primary objective of this investigation was to determine:
 
@@ -14,7 +14,7 @@ My primary objective of this investigation was to determine:
 - What actions were taken on the system afterward
 - What evidence supports possible data theft or exfiltration
 
-## Tools Used
+### Tools Used
 
 These are the tools I found useful in this investigation:
 
@@ -24,18 +24,21 @@ These are the tools I found useful in this investigation:
 - DB Browser for SQLite
 - Registry Explorer
 
+<br>
 
 # Jinkies Sherlock - DFIR Write-up
 
 ![](./screenshots/Jinkies.PNG)
 
-## Hack The Box Initial Information
+**Hack The Box Initial Information**
 
 You’re a third-party IR consultant and your manager has just forwarded you a case from a small-sized startup named **cloud-guru-management ltd**. They’re currently building out a product with their team of developers, but the CEO has received word-of-mouth communications that their intellectual property has been stolen and is in use elsewhere. The user in question says she may have accidentally shared her Documents folder, and she stated that she thinks the attack happened on the **6th of October**. The user also said she was away from her computer on this day. There is not a great deal more information from the company besides this. An investigation was initiated into the root cause of this potential theft from Cloud-guru; however, the team failed to discover the cause of the leak. They gathered preliminary evidence through a KAPE triage, and it was up to me to figure out the story of how this all came to be.
 
 **Note:** This Sherlock requires an element of OSINT, and players may need to interact with third-party services on the internet.
 
-## Initial Network Share Review
+<br>
+
+**Initial Network Share Review**
 
 To kick off my investigation, I wanted to confirm the user's claim that she "may have accidentally shared her Documents folder."
 
@@ -52,7 +55,9 @@ This confirmed that Velma's Documents folder was shared, and more importantly, t
 *Shared Folder's within `\LanmanServer\Shares\`:*
 ![](./screenshots/LanmanServer_Shared_Folders.PNG)
 
-## Credential Exposure Observations
+<br>
+
+**Credential Exposure Observations**
 
 After confirming the network shares, I focused on what sensitive content may have been exposed through those shared folders.
 
@@ -81,9 +86,11 @@ Since Velma's password was last changed **16 days before** the last observable m
 *Velma's last password change located with the SAM registry, located at: `SAM\Domains\Account\Users:*
 ![](./screenshots/Velma_Password_Changes.PNG)
 
-## Valid Account Compromise
+<br>
 
-After identifying that Velma's credentials were likely exposed, I wanted to verify whether someone actually authenticated to the workstation using her account.
+**Valid Account Compromise**
+
+After identifying that Velma's credentials were exposed, I wanted to verify whether someone had authenticated to the workstation using her account using them.
 
 Analysis of `Security.evtx` with **Event ID 4624** and a filter for `TargetUserName: Velma` showed multiple successful logon events. The event that stood out occurred at: `2023-10-06 17:17:23`
 
@@ -96,7 +103,9 @@ This timing was important because Velma reported being away from her workstation
 *Suspicious Network Logons for Velma's account*
 ![](./screenshots/Velma_Logins.PNG)
 
-## Post-Authentication User Activity
+<br>
+
+**Post-Authentication User Activity**
 
 After confirming suspicious authentication, I reviewed what happened immediately after the attacker logged into Velma's workstation.
 
@@ -110,7 +119,9 @@ This was a major clue because the attacker appeared to be specifically targeting
 
 I also checked the PowerShell logs: `PowerShell-Operational.evtx, PowerShell-Admin.evtx, Windows PowerShell.evtx` Although these did not contain evidence of attacker command activity. That made sense because the relevant attacker activity was observed through `cmd.exe` in `Sysmon-Operational.evtx`, not through PowerShell.
 
-## Malicious Outbound Web Activity
+<br>
+
+**Malicious Outbound Web Activity**
 
 While reviewing the attacker activity, I observed that after opening the login-related Python file, the attacker opened Google Chrome and visited: `https://pastes.io/`
 
@@ -128,8 +139,9 @@ Due to the attacker explicitly targeting the web application's login page and th
 *Velma's Google Chrome history showing the attacker visiting `pastes.io`*
 ![](./screenshots/pastes.PNG)
 
+<br>
 
-## Data Staging & Exfiltration Indicators
+**Data Staging & Exfiltration Indicators**
 
 While reviewing the available evidence, I did not observe the same kind of obvious staging pattern that might appear in other incidents, such as:
 
@@ -150,9 +162,11 @@ The most important exfiltration indicators were:
 - The attacker visited Pastes.io immediately afterward
 - The CEO had already heard reports that the company's intellectual property was being used elsewhere
 
-Taken together, this supports the assessment that data theft likely occurred, even though the exact contents transferred out of the environment were not directly visible in the local artifacts.
+Looking at this all together, this supports the assessment that data theft likely occurred, even though the exact contents transferred out of the environment were not directly visible in the local artifacts.
 
-## Threat Actor Message
+<br>
+
+**Threat Actor Message**
 
 While there were no other major observable malicious actions taken on the system, a new file appeared in Velma's Pictures directory: `C:\Users\Velma\Pictures\learn.txt`
 
@@ -167,7 +181,9 @@ The creation of a taunting message feels more opportunistic or immature. It does
 
 ![](./screenshots/learn.PNG)
 
-## Final Assessment
+<br>
+
+**Final Assessment**
 
 Based on the available artifacts, my investigation supports the following conclusions:
 
@@ -182,9 +198,9 @@ Based on the available artifacts, my investigation supports the following conclu
 
 While the available artifacts do not directly show the exact content copied to Pastes.io, the consistency across registry shares, credential exposure, authentication logs, process execution, browser history, and the original CEO report strongly supports that the attacker used exposed credentials to access Velma's workstation and likely steal project-related source code.
 
-## Next Steps
+**Next Steps**
 
-If this were a live incident, my next steps would include:
+If this were a real live incident, my next steps would include:
 
 - Disable the exposed network shares immediately.
 - Reset Velma's password and review her account for additional suspicious logons.
