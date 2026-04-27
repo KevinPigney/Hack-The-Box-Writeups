@@ -1,5 +1,3 @@
-# Jinkies Sherlock - DFIR Write-up
-
 ## Introduction
 
 This write-up documents my investigation of the **Jinkies** Sherlock challenge on Hack The Box. Rather than serving as a step-by-step guide on how to complete the challenge like other write-ups, these notes focus more on how I personally approached this investigation, what artifacts I chose to analyze, how I reasoned with the evidence, and how I documented my findings for others to read.
@@ -29,165 +27,92 @@ These are the tools I found useful in this investigation:
 
 # Jinkies Sherlock - DFIR Write-up
 
+![](./screenshots/Jinkies.PNG)
+
 ## Hack The Box Initial Information
 
-You’re a third-party IR consultant and your manager has just forwarded you a case from a small-sized startup named **cloud-guru-management ltd**. They’re currently building out a product with their team of developers, but the CEO has received word-of-mouth communications that their intellectual property has been stolen and is in use elsewhere.
+You’re a third-party IR consultant and your manager has just forwarded you a case from a small-sized startup named **cloud-guru-management ltd**. They’re currently building out a product with their team of developers, but the CEO has received word-of-mouth communications that their intellectual property has been stolen and is in use elsewhere. The user in question says she may have accidentally shared her Documents folder, and she stated that she thinks the attack happened on the **6th of October**. The user also said she was away from her computer on this day. There is not a great deal more information from the company besides this. An investigation was initiated into the root cause of this potential theft from Cloud-guru; however, the team failed to discover the cause of the leak. They gathered preliminary evidence through a KAPE triage, and it was up to me to figure out the story of how this all came to be.
 
-The user in question says she may have accidentally shared her Documents folder, and she stated that she thinks the attack happened on the **6th of October**. The user also said she was away from her computer on this day.
-
-There is not a great deal more information from the company besides this. An investigation was initiated into the root cause of this potential theft from Cloud-guru; however, the team failed to discover the cause of the leak. They gathered preliminary evidence through a KAPE triage, and it was up to me to figure out the story of how this all came to be.
-
-> **Note:** This Sherlock requires an element of OSINT, and players may need to interact with third-party services on the internet.
+**Note:** This Sherlock requires an element of OSINT, and players may need to interact with third-party services on the internet.
 
 ## Initial Network Share Review
 
-To start my investigation, I wanted to confirm the user's claim that she "may have accidentally shared her Documents folder."
+To kick off my investigation, I wanted to confirm the user's claim that she "may have accidentally shared her Documents folder."
 
 Members on the team suspected that the user likely right-clicked her Documents folder and selected the **Give access** or **Share** option. That seemed like the most logical place to start, because if the Documents folder was exposed over the network, it could explain how sensitive project files or intellectual property were accessed without needing malware execution first.
 
-It's worth noting that online reports state that in some instances of sharing a user's Documents folder, it can have a sort of "cascade effect" and result in the entire `C:\Users` parent directory being shared to ensure the network path is reachable.
+It's worth noting that online reports state that in some instances of sharing a user's Documents folder, it can have some sort of a "cascade effect" and result in the entire `C:\Users` parent directory being shared to ensure that the specific network path is reachable.
 
-The best place to verify network shares is within the SYSTEM registry hive. Using Eric Zimmerman's Registry Explorer, I reviewed the SYSTEM registry and navigated to:
+The best place to verify network shares is within the SYSTEM registry hive. Using Eric Zimmerman's Registry Explorer, I reviewed the SYSTEM registry and navigated to: `ControlSet001\Services\LanmanServer\Shares`. This location shows the system's non-administrative network shares.
 
-```text
-ControlSet001\Services\LanmanServer\Shares
-```
+Looking within `LanmanServer\Shares`, I observed that the following folders had been shared to the network: `C:\Users\Velma\Documents, C:\Users`
 
-This location shows the system's non-administrative network shares.
+This confirmed that Velma's Documents folder was shared, and more importantly, that the broader `C:\Users` directory was also exposed. At this point, there was registry evidence showing that sensitive user directories were actually shared over the network.
 
-Looking within `LanmanServer\Shares`, I observed that the following folders had been shared to the network:
-
-```text
-C:\Users\Velma\Documents
-C:\Users
-```
-
-This confirmed that Velma's Documents folder was shared, and more importantly, that the broader `C:\Users` directory was also exposed.
-
-At this point, the user's original statement became much more important. This was not just a vague user claim anymore — there was registry evidence showing that sensitive user directories were actually shared over the network.
-
-
+*Shared Folder's within `\LanmanServer\Shares\`:*
+![](./screenshots/LanmanServer_Shared_Folders.PNG)
 
 ## Credential Exposure Observations
 
 After confirming the network shares, I focused on what sensitive content may have been exposed through those shared folders.
 
-Within Velma's shared Documents folder, there was a subdirectory for a web server project:
+Within Velma's shared Documents folder, there was a subdirectory for a web server project: `C:\Users\Velma\Documents\web server project\testing\logon website\bk`. Inside that directory was a raw database dump file: `bk_db.ibd`. This file appeared to contain data from the web application's user table. The data included a large amount of personal information, including full names, Gmail addresses, and plaintext passwords.
 
-```text
-C:\Users\Velma\Documents\web server project\testing\logon website\bk
-```
+To get a concrete number of users associated with the leak, I used the following PowerShell command to count how many Gmail addresses were present within the dump: `(Select-String -Path "your_file.ibd" -Pattern "@gmail" -AllMatches).Matches.Count`
 
-Inside that directory was a raw database dump file:
+This showed me that there were **216 user credentials** located within the dump file, including the user in question, **Velma Dinkley**.
 
-```text
-bk_db.ibd
-```
-
-This file appeared to contain data from the web application's user table. The data included a large amount of personal information, including full names, Gmail addresses, and plaintext passwords.
-
-To get a concrete number of users associated with the leak, I used the following PowerShell command to count how many Gmail addresses were present within the dump:
-
-```powershell
-(Select-String -Path "your_file.ibd" -Pattern "@gmail" -AllMatches).Matches.Count
-```
-
-This showed that there were **216 user credentials** located within the dump file, including the user in question, **Velma Dinkley**.
-
-One of the most important findings was Velma's password information inside the exposed data dump. The NTLM hash associated with Velma's password was:
-
-```text
-967452709ae89eaeef4e2c951c3882ce
-```
+One of the most important findings was Velma's password information inside the exposed data dump. The NTLM hash associated with Velma's exposed password was: `967452709ae89eaeef4e2c951c3882ce`
 
 My next step was to determine whether the password in the data dump was likely still the same password Velma used for her workstation.
 
-To validate this, I reviewed Velma's account information within the SAM registry hive:
-
-```text
-SAM\Domains\Account\Users
-```
+To validate this, I reviewed Velma's account information within the SAM registry hive: `SAM\Domains\Account\Users`
 
 The key timestamps were:
 
-- `bk_db.ibd` last observable modification: **2023-09-20 13:05:17**
-- Velma's last password change: **2023-09-04 13:25:01**
+- `bk_db.ibd` last observable modification: `2023-09-20 13:05:17`
+- Velma's last password change: `2023-09-04 13:25:01`
 
-Since Velma's password was last changed **16 days before** the last observable modification time of the database dump, it is likely that the password exposed in the dump was still the same password being used for Velma's workstation.
+Since Velma's password was last changed **16 days before** the last observable modification time of the database dump, it is likely that the password exposed in the dump was still the same password being used for Velma's workstation. I would be careful not to say this proves the exact password was used, but the evidence strongly supports that the attacker had access to credentials that were still valid at the time of the intrusion. This points toward **MITRE ATT&CK T1078 - Valid Accounts**.
 
-I would be careful not to say this proves the exact password was used, but the evidence strongly supports that the attacker had access to credentials that were still valid at the time of the intrusion. This points toward **MITRE ATT&CK T1078 - Valid Accounts**.
+*Raw data dump file seen within $MFT with a last access date of October 6th, the same day the user Velma was not working:*
+![](./screenshots/Credential_Dump.PNG)
+
+*Velma's last password change located with the SAM registry, located at: `SAM\Domains\Account\Users:*
+![](./screenshots/Velma_Password_Changes.PNG)
 
 ## Valid Account Compromise
 
 After identifying that Velma's credentials were likely exposed, I wanted to verify whether someone actually authenticated to the workstation using her account.
 
-Analysis of `Security.evtx` with **Event ID 4624** and a filter for `TargetUserName: Velma` showed multiple successful logon events. The event that stood out occurred at:
+Analysis of `Security.evtx` with **Event ID 4624** and a filter for `TargetUserName: Velma` showed multiple successful logon events. The event that stood out occurred at: `2023-10-06 17:17:23`
 
-```text
-2023-10-06 17:17:23
-```
-
-This event was classified as:
-
-```text
-Logon Type 3 - Network Logon
-```
+This event was classified as: `Logon Type 3 - Network Logon`
 
 A Type 3 logon indicates that the authentication occurred over the network rather than through an interactive console session.
 
-This timing was important because Velma reported being away from her workstation that day. Given that context, a successful network logon using Velma's account is highly suspicious and suggests that an external or unauthorized system authenticated to the host using valid credentials.
+This timing was important because Velma reported being away from her workstation that day. Given that context, a successful network logon using Velma's account is highly suspicious and suggests that an external or unauthorized system authenticated to the host using valid credentials. This behavior is consistent with an attacker leveraging exposed credentials to remotely access the system, likely through SMB or another network-accessible service.
 
-This behavior is consistent with an attacker leveraging exposed credentials to remotely access the system, likely through SMB or another network-accessible service.
+*Suspicious Network Logons for Velma's account*
+![](./screenshots/Velma_Logins.PNG)
 
 ## Post-Authentication User Activity
 
 After confirming suspicious authentication, I reviewed what happened immediately after the attacker logged into Velma's workstation.
 
-Based on `Sysmon-Operational.evtx`, the attacker ran the following command in `cmd.exe` shortly after logging in:
-
-```cmd
-whoami
-```
-
-The command was executed at approximately:
-
-```text
-2023-10-06 17:17:45
-```
+Based on `Sysmon-Operational.evtx`, the attacker ran the following command in `cmd.exe` shortly after logging in: `whoami`. The command was executed at approximately: `2023-10-06 17:17:45`
 
 This stood out because `whoami` is commonly used by attackers to confirm which account they are operating as after gaining access to a system. In this case, it aligns with **MITRE ATT&CK T1033 - System Owner/User Discovery**.
 
-Shortly after that, the attacker opened the following file in VS Code:
-
-```text
-Version-1.0.1 - TERMINAL LOGIN.py
-```
-
-The file was opened at approximately:
-
-```text
-2023-10-06 17:18:27
-```
+Shortly after that, the attacker opened the following file in VS Code: `Version-1.0.1 - TERMINAL LOGIN.py`. The file was opened at approximately: `2023-10-06 17:18:27`
 
 This was a major clue because the attacker appeared to be specifically targeting a web application's login-related source code. That lines up with the overall scenario from Hack The Box, where the company believed their intellectual property had been stolen and was being used elsewhere.
 
-I also checked the PowerShell logs:
-
-```text
-PowerShell-Operational.evtx
-PowerShell-Admin.evtx
-Windows PowerShell.evtx
-```
-
-These did not contain evidence of attacker command activity. That made sense because the relevant attacker activity was observed through `cmd.exe` in `Sysmon-Operational.evtx`, not through PowerShell.
+I also checked the PowerShell logs: `PowerShell-Operational.evtx, PowerShell-Admin.evtx, Windows PowerShell.evtx` Although these did not contain evidence of attacker command activity. That made sense because the relevant attacker activity was observed through `cmd.exe` in `Sysmon-Operational.evtx`, not through PowerShell.
 
 ## Malicious Outbound Web Activity
 
-While reviewing the attacker activity, I observed that after opening the login-related Python file, the attacker opened Google Chrome and visited:
-
-```text
-https://pastes.io/
-```
+While reviewing the attacker activity, I observed that after opening the login-related Python file, the attacker opened Google Chrome and visited: `https://pastes.io/`
 
 Pastes.io is a minimalist pastebin-style platform designed for users to quickly store and share text, code snippets, and logs.
 
@@ -198,41 +123,11 @@ This does not prove by itself that the attacker pasted or exfiltrated the source
 3. The attacker opened a web application's login-related Python file in VS Code.
 4. The attacker then browsed to a paste site.
 
-Due to the attacker explicitly targeting the web application's login page and then visiting Pastes.io, this activity is strongly consistent with data staging or exfiltration of intellectual property.
+Due to the attacker explicitly targeting the web application's login page and then visiting Pastes.io, this activity is strongly consistent with data staging or exfiltration of intellectual property. I do not have direct proof of the exact content transferred to Pastes.io from the local artifacts alone, so I would avoid saying the exfiltration is fully confirmed from this evidence. However, when paired with the CEO's report that the company's intellectual property was being used elsewhere, this activity strongly supports a likely theft scenario.
 
-I do not have direct proof of the exact content transferred to Pastes.io from the local artifacts alone, so I would avoid saying the exfiltration is fully confirmed from this evidence. However, when paired with the CEO's report that the company's intellectual property was being used elsewhere, this activity strongly supports a likely theft scenario.
+*Velma's Google Chrome history showing the attacker visiting `pastes.io`*
+![](./screenshots/pastes.PNG)
 
-## Host-Level Behavioral Analysis
-
-While continuing the analysis of `Sysmon-Operational.evtx`, I focused on what the attacker did after gaining access to the workstation.
-
-The attacker's observed activity was fairly limited but targeted:
-
-- Authenticated using Velma's account
-- Ran `whoami`
-- Opened the login-related Python file in VS Code
-- Opened Chrome
-- Visited Pastes.io
-
-There was no evidence in my notes of the attacker interacting with a large number of unrelated files, running discovery across the entire host, executing PowerShell payloads, or staging a traditional toolkit.
-
-That actually made the activity a little more interesting. The attacker appeared to have a specific objective rather than performing broad hands-on-keyboard activity. The targeting of `Version-1.0.1 - TERMINAL LOGIN.py` suggests they knew what they were looking for or quickly found a file relevant to the company's web application.
-
-This fits with the overall story of a focused intellectual property theft rather than a noisy malware infection.
-
-## Network Activity & Web-Based Staging
-
-The main network-related artifact in this investigation was the Chrome visit to:
-
-```text
-https://pastes.io/
-```
-
-Unlike some investigations where I would expect to see staged tools, archives, or obvious transfer utilities, this case was more lightweight. The attacker did not appear to need a dedicated exfiltration tool because a paste site could be enough to quickly copy and share source code or application logic.
-
-In this context, the use of Pastes.io is suspicious because it occurred immediately after the attacker opened a source code file in VS Code.
-
-This behavior is consistent with a very simple web-based staging or exfiltration method, even though the available artifacts do not show the exact pasted content.
 
 ## Data Staging & Exfiltration Indicators
 
@@ -259,24 +154,18 @@ Taken together, this supports the assessment that data theft likely occurred, ev
 
 ## Threat Actor Message
 
-While there were no other major observable malicious actions taken on the system, a new file appeared in Velma's Pictures directory:
-
-```text
-C:\Users\Velma\Pictures\learn.txt
-```
+While there were no other major observable malicious actions taken on the system, a new file appeared in Velma's Pictures directory: `C:\Users\Velma\Pictures\learn.txt`
 
 The contents of the file stated:
 
-```text
-lol check your drivers next time idiot
-signed by: pwnmaster12
-```
+`lol check your drivers next time idiot
+signed by: pwnmaster12`
 
-This behavior was pretty irregular compared to the rest of the attacker activity. The earlier actions, such as targeted access to a web application file followed by browsing to a paste site, suggested a focused objective consistent with data collection or exfiltration.
+I thought this behavior was pretty irregular compared to the rest of the attacker's activity. Their earlier actions, such as targeted access to a web application file followed by browsing to a paste site, suggested a focused objective consistent with data collection or exfiltration.
 
-In contrast, the creation of a taunting message feels more opportunistic or immature. It does not really fit cleanly with the rest of the activity.
+The creation of a taunting message feels more opportunistic or immature. It doesn't really fit cleanly with the rest of their activity, in my opinion.
 
-Because of that inconsistency, I would treat this artifact as relevant but not central to the intrusion. It may help identify the actor or support OSINT research, but it does not materially change my assessment that the primary objective of the intrusion was likely data theft.
+![](./screenshots/learn.PNG)
 
 ## Final Assessment
 
