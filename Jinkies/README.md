@@ -196,6 +196,8 @@ Based on the available artifacts, my investigation supports the following conclu
 
 While the available artifacts do not directly show the exact content copied to Pastes.io, the consistency across registry shares, credential exposure, authentication logs, process execution, browser history, and the original CEO report strongly supports that the attacker used exposed credentials to access Velma's workstation and likely steal project-related source code.
 
+<br>
+
 **Next Steps**
 
 If this were a real live incident, my next steps would include:
