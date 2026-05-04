@@ -1,6 +1,8 @@
 ### Introduction
 
-This write-up documents my investigation of a suspected Active Directory breach in the `Main.local` domain. Rather than serving as a simple answer key or step-by-step walkthrough, these notes focus more on how I approached the investigation, what artifacts I chose to analyze, how I correlated activity across multiple hosts, and how I reconstructed the attacker’s actions from the available Windows Event Logs and Sysmon data.
+This write-up documents my investigation of a suspected Active Directory breach in the `Main.local` domain. In addition to practicing my DFIR investigation process, I am also using these write-ups as an opportunity to improve my professional writing, technical note-taking, and overall documentation structure.
+
+Rather than treating this as a simple answer key or step-by-step walkthrough, these notes focus on how I approached the investigation, what artifacts I chose to analyze, how I correlated activity across multiple hosts, and how I reconstructed the attacker’s actions from the available Windows Event Logs and Sysmon data.
 
 The environment included one Domain Controller, `DC01`, and two client machines, `Client02` and `Client03`. Based on the initial scenario, a user on `Client03` received a phishing email that ultimately led to broader domain compromise. My goal was to treat this like a real-world DFIR case by following the evidence, validating assumptions across multiple logs, and documenting the attack chain in a way that clearly explains both what happened and why each finding matters.
 
