@@ -32,7 +32,7 @@ These are the tools I found useful in this investigation:
 
 # Knock Knock Sherlock - DFIR Write-up
 
-![](./screenshots/Knock-Knock.PNG)
+![](./screenshots/Knock-Knock.png)
 
 **Hack The Box Initial Information:**
 
