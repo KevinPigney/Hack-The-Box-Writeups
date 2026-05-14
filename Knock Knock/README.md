@@ -32,7 +32,7 @@ These are the tools I found useful in this investigation:
 
 # Knock Knock Sherlock - DFIR Write-up
 
-
+![](./screenshots/Knock-Knock.PNG)
 
 **Hack The Box Initial Information:**
 
@@ -88,6 +88,8 @@ Key hosts identified:
 
 The packet capture showed the victim server receiving repeated TCP SYN requests from `3.109.209[.]43` beginning at `2023-03-21 10:42:23`. The SYN requests were sent against many ports in numerical order, which resembled automated port scanning behavior, likely from a tool such as Nmap.
 
+![](./screenshots/nmap.PNG)
+
 At this stage, the evidence suggested the attacker first discovered the server through external reconnaissance rather than by exploiting a known vulnerability immediately.
 
 <br>
@@ -103,7 +105,9 @@ Open ports observed:
 - `6379` - Redis
 - `8086` - InfluxDB
 
-This was significant because several of these services should generally not be exposed directly to the internet without strict access control. FTP stood out immediately because it is commonly targeted for credential attacks and may expose sensitive files if permissions or credentials are weak. My next step was checking if there was any evidence of suspicious activity related to the known attacker IP attempts over any of these ports, and identify the initial access vector in this attack.
+![](./screenshots/Open-Ports.PNG)
+
+This was significant because several of these services should generally not be exposed directly to the internet without strict access control. FTP stood out immediately because it is commonly targeted for credential attacks and may expose sensitive files if permissions or credentials are weak. My next step was checking if there was any evidence of suspicious activity related to the known attacker IP attempts over any of these ports, and identify the initial access vector of this attack.
 
 <br>
 
@@ -130,7 +134,7 @@ At `10:52:03`, the attacker downloaded a file named: `.backup`
 
 This file was critical to the investigation because it contained configuration data and exposed credentials for another backup server. The most important section exposed the configuration for an internal FTP service protected by port knocking:
 
-!port knock picture
+![](./screenshots/backup.PNG)
 
 This `.backup` file explained how the attacker was able to move from regular FTP access on port `21` to a hidden service on port `24456`. The file essentially gave the attacker the exact port knocking sequence required to modify the firewall rule and allow their external source IP to access the protected service.
 
@@ -140,14 +144,9 @@ This `.backup` file explained how the attacker was able to move from regular FTP
 
 After recovering the `.backup` file, I reviewed the packet capture for evidence that the attacker actually used the exposed port knocking sequence.
 
-At `10:58:50`, the attacker sent SYN packets to the following ports in sequence:
-- `29999`
-- `50234`
-- `45087`
+At `10:58:50`, the attacker sent SYN packets to the following ports in sequence: `29999` -> `50234` -> `45087`.
 
-This matched the sequence found in `.backup`. Shortly afterward, at approximately `11:00:01`, the attacker accessed the hidden internal service on port `24456`.
-
-This correlation was important because it showed that `.backup` was not simply an exposed sensitive file; it was actively used by the attacker to unlock another service. The sequence of events was:
+This matched the sequence found in `.backup`. Shortly afterward, at approximately `11:00:01`, the attacker accessed the hidden internal service on port `24456`. This correlation was important because it showed that `.backup` was not simply an exposed sensitive file; it was actively used by the attacker to unlock another service. The sequence of events was:
 
 1. FTP login as `tony.shephard`
 2. Download `.backup`
@@ -172,13 +171,15 @@ Files retrieved included:
 
 This activity represents direct data exposure. The attacker was not just browsing the service; they were retrieving files that contained operational details, credentials, user information, and internal notes.
 
-The `/etc/passwd` file was especially useful from an investigative perspective because it showed which Linux accounts existed on the host and which accounts had interactive shells. Notably, the `cyberjunkie` account had `/bin/bash` configured as its shell, which meant the account could potentially support interactive SSH access further down the chain if valid credentials were to be recovered.
+The `/etc/passwd` file was especially useful from an investigative perspective because it showed which Linux accounts existed on the host and which accounts had interactive shells. Notably, the `cyberjunkie` account had `/bin/bash` configured as its shell, which meant the account could potentially support interactive SSH access further down the attack chain if valid credentials were to be recovered.
 
 <br>
 
 **Recovering File Contents from Passive FTP Streams**
 
 To recover the contents of the files retrieved over FTP, I first located the relevant FTP control stream. One example was: `tcp.stream eq 77913`
+
+![](./screenshots/GhostTrace.PNG)
 
 The control stream showed FTP commands such as `EPSV` and `RETR`, but the actual file contents were not stored in that control stream. Since FTP passive mode uses separate data connections, I had to pivot from the `RETR` command to the associated passive FTP data stream.
 
@@ -219,29 +220,19 @@ After recovering the files from the passive FTP streams, I reviewed them to dete
 
 The `.archived.sql` file contained a MySQL dump for a database named: `AWS_SECRETS`
 
-The dump included a table named:
-
-```text
-AWS_EC2_DEV
-```
-
-This indicated that the attacker likely gained access to credential or secret-related data from a database backup.
+![](./screenshots/archived-sql.PNG)
 
 The `reminder.txt` file contained internal notes about Forela’s expansion into Pakistan, operational deadlines, and references to Lahore. While this was not necessarily a credential file, it provided business context and internal operational information that could help an attacker understand the environment.
 
-The `.reminder` file was more significant from an investigation standpoint because it stated:
+![](./screenshots/reminder-txt.PNG)
 
-```text
-A reminder to clean up the github repo. Some sensitive data could have been leaked from there
-```
+The `.reminder` file directly influenced my next pivot. Since the attacker had access to this file, it was reasonable to investigate whether the Forela GitHub repository contained additional exposed secrets.:
 
-This note directly influenced my next pivot. Since the attacker had access to this file, it was reasonable to investigate whether the Forela GitHub repository contained additional exposed secrets.
+![](./screenshots/reminder.PNG)
 
 For `Tasks to get Done.docx`, the FTP stream was not readable as plaintext because `.docx` files are binary Office documents. I changed Wireshark’s stream display to raw output, saved the stream as a `.docx` file, and opened it in Word. The document contained an “Urgent Tasks” chart with internal deadlines, including:
 
-
-
-This helped confirm that the retrieved files contained internal planning data, not just random decoy content.
+![](./screenshots/docx.PNG)
 
 <br>
 
@@ -255,17 +246,19 @@ The file that stood out was:
 https://github.com/forela-finance/forela-dev/blob/main/internal-dev.yaml
 ```
 
+![](./screenshots/Updated-internal-dev-yaml.PNG)
+
 At first, the current version of `internal-dev.yaml` did not show obvious plaintext credentials. However, because `.reminder` specifically mentioned cleaning up the GitHub repository, I did not stop at the current file contents. I cloned the repository so I could review prior commits locally:
 
-```bash
-git clone https://github.com/forela-finance/forela-dev
-```
+![](./screenshots/git-clone.PNG)
 
 Running `git log` revealed a commit with the message:
 
 ```text
 Updated the script to be more secure. Earlier configuration was insecure
 ```
+
+![](./screenshots/Unsecure-Commit.PNG)
 
 That commit message was important because it suggested the current version may have been sanitized, while the previous version could still contain the sensitive data that had been removed.
 
@@ -294,11 +287,11 @@ This finding was especially important when correlated with `/etc/passwd`, which 
 cyberjunkie:x:1003:1003:,,,:/home/cyberjunkie:/bin/bash
 ```
 
+![](./screenshots/etc-passwd.PNG)
+
 The `/bin/bash` shell indicated that `cyberjunkie` was an interactive account. This made the recovered GitHub credential immediately useful for SSH access.
 
-At `11:25:42`, the packet capture showed the attacker establishing an SSH connection to the victim server. Based on the timing and the recovered repository credentials, the SSH login was likely performed using the exposed `cyberjunkie` credentials.
-
-This was a key example of why reviewing historical Git commits matters. Even when secrets are removed from the current version of a repository, they may remain recoverable from commit history unless the history is rewritten and the credentials are rotated.
+At `11:25:42`, the packet capture showed the attacker establishing an SSH connection to the victim server. Based on the timing and the recovered repository credentials, the SSH login was likely performed using the exposed `cyberjunkie` credentials. This was a key example of why reviewing historical Git commits matters. Even when secrets are removed from the current version of a repository, they may remain recoverable from commit history unless the history is rewritten and the credentials are rotated.
 
 <br>
 
@@ -306,11 +299,7 @@ This was a key example of why reviewing historical Git commits matters. Even whe
 
 After the SSH connection, I continued reviewing outbound network activity from the victim server to determine what the attacker did next.
 
-At `11:42:34`, the victim machine `172.31.39.46` established an outbound HTTP connection to:
-
-```text
-13.233.179.35
-```
+At `11:42:34`, the victim machine `172.31.39[.]46` established an outbound HTTP connection to: `13.233.179[.]35`
 
 The HTTP stream showed a GET request for:
 
@@ -320,13 +309,15 @@ The HTTP stream showed a GET request for:
 
 The request used the following user agent:
 
-```text
-Wget/1.21.2
-```
+![](./screenshots/Wget.PNG)
 
 This was obviously suspicious because the victim server was pulling a ZIP archive from an external host after the attacker had already established SSH access, the filename also strongly suggested a ransomware payload.
 
 I exported `Ransomware2_server.zip` from the capture and reviewed the compressed contents. The ZIP contained a `README.md` file identifying the project as part of the GonnaCry ransomware family.
+
+![](./screenshots/Ransomware-repo.PNG)
+![](./screenshots/GonnaCry-README.PNG)
+![](./screenshots/GonnaCry-TrendMicro.PNG)
 
 Based on the available evidence, ransomware payload retrieval was confirmed. The packet capture supported download activity, but the capture did not include direct evidence of encryption execution or file impact on the victim host. Therefore, I assessed ransomware staging/download as confirmed, while ransomware execution or encryption impact would require additional host artifacts or logs to validate.
 
@@ -335,8 +326,8 @@ Based on the available evidence, ransomware payload retrieval was confirmed. The
 **Final Assessment**
 
 Based on the available artifacts, the investigation supports the following conclusions:
-- The victim server `172.31.39.46` was exposed to the internet.
-- The attacker `3.109.209.43` performed Nmap-like TCP SYN scanning at `10:42:23`.
+- The victim server `172.31.39[.]46` was exposed to the internet.
+- The attacker `3.109.209[.]43` performed Nmap-like TCP SYN scanning at `10:42:23`.
 - The server exposed several services, including FTP, SSH, MySQL, Redis, and InfluxDB.
 - The attacker performed password spraying against multiple FTP accounts.
 - The attacker successfully authenticated as `tony.shephard` over FTP using `Summer2023!`.
@@ -347,7 +338,7 @@ Based on the available artifacts, the investigation supports the following concl
 - GitHub repository history exposed SSH credentials for the `cyberjunkie` account.
 - `/etc/passwd` showed that `cyberjunkie` had `/bin/bash`, making the account suitable for interactive login.
 - The attacker established an SSH connection at `11:25:42`, likely using the recovered `cyberjunkie` credentials.
-- The victim later downloaded `Ransomware2_server.zip` from `13.233.179.35` using Wget.
+- The victim later downloaded `Ransomware2_server.zip` from `13.233.179[.]35` using Wget.
 - The ZIP contents identified the ransomware family as GonnaCry.
 
 Overall, the evidence supports a compromise chain beginning with exposed services and weak FTP credentials, followed by configuration leaks, hidden service access through port knocking, sensitive file retrieval, exposed GitHub credentials, SSH access, and ransomware payload download.
@@ -356,7 +347,7 @@ Overall, the evidence supports a compromise chain beginning with exposed service
 
 **Attack Chain Summary**
 
-1. Attacker scans `172.31.39.46` from `3.109.209.43`
+1. Attacker scans `172.31.39[.]46` from `3.109.209[.]43`
 2. Open services are identified: `21`, `22`, `3306`, `6379`, and `8086`
 3. Attacker conducts FTP password spraying against multiple accounts
 4. `tony.shephard` successfully authenticates over FTP with `Summer2023!`
@@ -369,7 +360,7 @@ Overall, the evidence supports a compromise chain beginning with exposed service
 11. Repository history reveals `cyberjunkie` SSH credentials
 12. `/etc/passwd` confirms `cyberjunkie` has an interactive shell
 13. Attacker establishes SSH access at `11:25:42`
-14. Victim downloads `Ransomware2_server.zip` from `13.233.179.35`
+14. Victim downloads `Ransomware2_server.zip` from `13.233.179[.]35`
 15. Extracted README identifies the ransomware family as GonnaCry
 
 <br>
