@@ -88,7 +88,7 @@ Key hosts identified:
 
 The packet capture showed the victim server receiving repeated TCP SYN requests from `3.109.209[.]43` beginning at `2023-03-21 10:42:23`. The SYN requests were sent against many ports in numerical order, which resembled automated port scanning behavior, likely from a tool such as Nmap.
 
-![](./screenshots/nmap.PNG)
+![](./screenshots/nmap.png)
 
 At this stage, the evidence suggested the attacker first discovered the server through external reconnaissance rather than by exploiting a known vulnerability immediately.
 
@@ -105,7 +105,7 @@ Open ports observed:
 - `6379` - Redis
 - `8086` - InfluxDB
 
-![](./screenshots/Open-Ports.PNG)
+![](./screenshots/Open-Ports.png)
 
 This was significant because several of these services should generally not be exposed directly to the internet without strict access control. FTP stood out immediately because it is commonly targeted for credential attacks and may expose sensitive files if permissions or credentials are weak. My next step was checking if there was any evidence of suspicious activity related to the known attacker IP attempts over any of these ports, and identify the initial access vector of this attack.
 
@@ -134,7 +134,7 @@ At `10:52:03`, the attacker downloaded a file named: `.backup`
 
 This file was critical to the investigation because it contained configuration data and exposed credentials for another backup server. The most important section exposed the configuration for an internal FTP service protected by port knocking:
 
-![](./screenshots/backup.PNG)
+![](./screenshots/backup.png)
 
 This `.backup` file explained how the attacker was able to move from regular FTP access on port `21` to a hidden service on port `24456`. The file essentially gave the attacker the exact port knocking sequence required to modify the firewall rule and allow their external source IP to access the protected service.
 
@@ -179,7 +179,7 @@ The `/etc/passwd` file was especially useful from an investigative perspective b
 
 To recover the contents of the files retrieved over FTP, I first located the relevant FTP control stream. One example was: `tcp.stream eq 77913`
 
-![](./screenshots/GhostTrace.PNG)
+![](./screenshots/GhostTrace.png)
 
 The control stream showed FTP commands such as `EPSV` and `RETR`, but the actual file contents were not stored in that control stream. Since FTP passive mode uses separate data connections, I had to pivot from the `RETR` command to the associated passive FTP data stream.
 
@@ -220,19 +220,19 @@ After recovering the files from the passive FTP streams, I reviewed them to dete
 
 The `.archived.sql` file contained a MySQL dump for a database named: `AWS_SECRETS`
 
-![](./screenshots/archived-sql.PNG)
+![](./screenshots/archived-sql.png)
 
 The `reminder.txt` file contained internal notes about Forela’s expansion into Pakistan, operational deadlines, and references to Lahore. While this was not necessarily a credential file, it provided business context and internal operational information that could help an attacker understand the environment.
 
-![](./screenshots/reminder-txt.PNG)
+![](./screenshots/reminder-txt.png)
 
 The `.reminder` file directly influenced my next pivot. Since the attacker had access to this file, it was reasonable to investigate whether the Forela GitHub repository contained additional exposed secrets.:
 
-![](./screenshots/reminder.PNG)
+![](./screenshots/reminder.png)
 
 For `Tasks to get Done.docx`, the FTP stream was not readable as plaintext because `.docx` files are binary Office documents. I changed Wireshark’s stream display to raw output, saved the stream as a `.docx` file, and opened it in Word. The document contained an “Urgent Tasks” chart with internal deadlines, including:
 
-![](./screenshots/docx.PNG)
+![](./screenshots/docx.png)
 
 <br>
 
@@ -246,11 +246,11 @@ The file that stood out was:
 https://github.com/forela-finance/forela-dev/blob/main/internal-dev.yaml
 ```
 
-![](./screenshots/Updated-internal-dev-yaml.PNG)
+![](./screenshots/Updated-internal-dev-yaml.png)
 
 At first, the current version of `internal-dev.yaml` did not show obvious plaintext credentials. However, because `.reminder` specifically mentioned cleaning up the GitHub repository, I did not stop at the current file contents. I cloned the repository so I could review prior commits locally:
 
-![](./screenshots/git-clone.PNG)
+![](./screenshots/git-clone.png)
 
 Running `git log` revealed a commit with the message:
 
@@ -258,7 +258,7 @@ Running `git log` revealed a commit with the message:
 Updated the script to be more secure. Earlier configuration was insecure
 ```
 
-![](./screenshots/Unsecure-Commit.PNG)
+![](./screenshots/Unsecure-Commit.png)
 
 That commit message was important because it suggested the current version may have been sanitized, while the previous version could still contain the sensitive data that had been removed.
 
@@ -287,7 +287,7 @@ This finding was especially important when correlated with `/etc/passwd`, which 
 cyberjunkie:x:1003:1003:,,,:/home/cyberjunkie:/bin/bash
 ```
 
-![](./screenshots/etc-passwd.PNG)
+![](./screenshots/etc-passwd.png)
 
 The `/bin/bash` shell indicated that `cyberjunkie` was an interactive account. This made the recovered GitHub credential immediately useful for SSH access.
 
@@ -309,15 +309,15 @@ The HTTP stream showed a GET request for:
 
 The request used the following user agent:
 
-![](./screenshots/Wget.PNG)
+![](./screenshots/Wget.png)
 
 This was obviously suspicious because the victim server was pulling a ZIP archive from an external host after the attacker had already established SSH access, the filename also strongly suggested a ransomware payload.
 
 I exported `Ransomware2_server.zip` from the capture and reviewed the compressed contents. The ZIP contained a `README.md` file identifying the project as part of the GonnaCry ransomware family.
 
-![](./screenshots/Ransomware-repo.PNG)
-![](./screenshots/GonnaCry-README.PNG)
-![](./screenshots/GonnaCry-TrendMicro.PNG)
+![](./screenshots/Ransomware-repo.png)
+![](./screenshots/GonnaCry-README.png)
+![](./screenshots/GonnaCry-TrendMicro.png)
 
 Based on the available evidence, ransomware payload retrieval was confirmed. The packet capture supported download activity, but the capture did not include direct evidence of encryption execution or file impact on the victim host. Therefore, I assessed ransomware staging/download as confirmed, while ransomware execution or encryption impact would require additional host artifacts or logs to validate.
 
