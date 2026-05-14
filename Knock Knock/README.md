@@ -179,8 +179,6 @@ The `/etc/passwd` file was especially useful from an investigative perspective b
 
 To recover the contents of the files retrieved over FTP, I first located the relevant FTP control stream. One example was: `tcp.stream eq 77913`
 
-![](./screenshots/GhostTrace.png)
-
 The control stream showed FTP commands such as `EPSV` and `RETR`, but the actual file contents were not stored in that control stream. Since FTP passive mode uses separate data connections, I had to pivot from the `RETR` command to the associated passive FTP data stream.
 
 For example, when the attacker requested `.reminder`, the control stream showed:
