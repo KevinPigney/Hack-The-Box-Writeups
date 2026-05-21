@@ -55,7 +55,7 @@ Grafana logs showed successful path traversal requests against `/public/plugins/
 
 After gaining host-level access, the attacker staged a script named `injector.sh` in `/opt/automation`, used native Linux utilities such as `wget` and `curl` to deploy the `xmrig` miner and its configuration file, and abused a root-executed cron workflow involving `/opt/automation/updater.sh`. This allowed the miner to run with root privileges.
 
-The miner was later observed running from the hidden directory `/usr/share/.logstxt/`, using `/usr/share/.logstxt/config.json` as its configuration file. Network evidence showed the miner communicating with infrastructure associated with Monero mining, and the pool was identified as `monero.herominers.com`. The attacker also ran `shred -u ./injector.sh`, which prevented recovery of the `injector.sh` script contents from the available artifacts.
+The miner was later observed running from the hidden directory `/usr/share/.logstxt/`, using `/usr/share/.logstxt/config.json` as its configuration file. Network evidence showed the miner communicating with infrastructure associated with Monero mining, and the pool was identified as `monero.herominers[.]com`. The attacker also ran `shred -u ./injector.sh`, which prevented recovery of the `injector.sh` script contents from the available artifacts.
 
 Overall, the evidence supports a compromise chain involving Grafana path traversal, credential exposure, credential reuse, Linux host access, payload staging, cron abuse, anti-forensics, and cryptomining impact.
 
@@ -222,7 +222,7 @@ The `threads=0` value means `xmrig` was configured to automatically determine th
 
 Network activity showed the miner communicating with: `141.95.126[.]31:10191`
 
-The mining pool was identified as: `monero.herominers.com`
+The mining pool was identified as: `monero.herominers[.]com`
 
 In my available artifact set, the clearest local evidence was the `xmrig` network connection to `141.95.126[.]31`. I used open-source intel to associate that IP with Monero mining infrastructure. A later-reviewed write-up referenced direct artifact evidence showing the pool URL explicitly, but that direct local artifact was not available or not observed in my extracted evidence set.
 
@@ -292,7 +292,7 @@ One important lesson was the difference between the artifact existing on the sou
 11. Miner files were initially staged in `/opt/automation`
 12. Miner files were moved to `/usr/share/.logstxt/`
 13. `xmrig` executed as root with `threads=0`
-14. `xmrig` communicated with Monero mining infrastructure associated with `monero.herominers.com`
+14. `xmrig` communicated with Monero mining infrastructure associated with `monero.herominers[.]com`
 15. The TA ran `shred -u ./injector.sh` to prevent recovery of the staging script
 
 <br>
@@ -305,7 +305,7 @@ Network Indicators:
 - `95.181.232[.]32` - Grafana path traversal source
 - `195.80.150[.]137` - Grafana traversal and authenticated Grafana access
 - `141.95.126[.]31` - Outbound connection to Mining-related network endpoint
-- `monero.herominers.com` - Mining pool
+- `monero.herominers[.]com` - Mining pool
 - `86.5.206[.]121` - Known organization office/SOC/admin IP, not treated as TA infrastructure
 
 Host Indicators:
