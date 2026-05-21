@@ -306,7 +306,6 @@ Network Indicators:
 - `195.80.150[.]137` - Grafana traversal and authenticated Grafana access
 - `141.95.126[.]31` - Outbound connection to Mining-related network endpoint
 - `monero.herominers[.]com` - Mining pool
-- `86.5.206[.]121` - Known organization office/SOC/admin IP, not treated as TA infrastructure
 
 Host Indicators:
 
