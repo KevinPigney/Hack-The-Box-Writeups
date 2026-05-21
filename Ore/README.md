@@ -273,7 +273,7 @@ The most useful Linux artifacts and concepts in this case were:
 - CatScale output for live-response triage context
 - Collection error logs for understanding missing or incomplete artifacts
 
-One important lesson was the difference between **the artifact existing on the source system** and **the artifact being successfully collected**. In this case, `system.journal` appeared in collection-related references, but the actual journal file was not available in my extracted artifact set. Because of that, I had to reconstruct some activity from weaker but still useful evidence, such as shell history, process listings, and surrounding command context.
+One important lesson was the difference between the artifact existing on the source system and the artifact being successfully collected. In this case, `system.journal` appeared in collection-related references, but the actual journal file was not available in my extracted artifact set. Because of that, I had to reconstruct some activity from weaker but still useful evidence, such as shell history, process listings, and surrounding command context.
 
 <br>
 
