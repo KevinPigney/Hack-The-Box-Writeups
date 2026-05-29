@@ -4,6 +4,16 @@ This write-up documents my partial investigation of the **CAMouflage** Sherlock 
 
 Rather than forcing a complete answer guide, I am documenting the investigative path I followed, what I was able to validate, and where the analysis became more malware-reverse-engineering focused than expected.
 
+### Tools Used
+
+- EvtxECmd.exe
+- PECmd.exe
+- MFTECmd.exe
+- bstrings.exe
+- VirusTotal
+- PEStudio
+- PowerShell / CMD hashing
+
 <br>
 
 # CAMouflage Sherlock - DFIR Triage Write-up
@@ -23,18 +33,6 @@ One of these files, `Play.wp5`, was determined to be a disguised Cabinet archive
 Further analysis showed that the unpacked `mysql.wp5` was not a normal `.wp5` file either. It was an obfuscated batch script that renamed or executed as `Mysql.wp5.bat`. After resolving the batch variables, the script revealed that it created a `448887` directory, rebuilt a renamed AutoIt interpreter named `Moscow.com`, concatenated multiple disguised `.wp5` chunks into a runtime-generated payload named `K`, and launched it using `Moscow.com K`.
 
 Although I did not fully complete the final C2-domain task, the available evidence strongly supports a malware execution chain involving a cracked software lure, disguised file extensions, Cabinet extraction, obfuscated batch execution, payload reconstruction, and AutoIt-based execution.
-
-<br>
-
-**Tools Used**
-
-- EvtxECmd.exe
-- PECmd.exe
-- MFTECmd.exe
-- bstrings.exe
-- VirusTotal
-- PEStudio
-- PowerShell / CMD hashing
 
 <br>
 
