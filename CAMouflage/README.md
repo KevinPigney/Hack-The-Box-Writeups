@@ -46,6 +46,10 @@ To validate whether this execution aligned with user-driven activity, I also rev
 
 This correlation between browser search history and Prefetch execution helped establish the likely initial access path: the user searched for cracked Mastercam software, downloaded or interacted with a suspicious installer, and then executed the cracked application.
 
+![](./screenshots/installer.PNG)
+
+![](./screenshots/browser_history.PNG)
+
 <br>
 
 **Suspicious Temp File Activity**
