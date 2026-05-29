@@ -167,36 +167,6 @@ This was confirmed through VirusTotal and PEStudio metadata. The behavior indica
 
 <br>
 
-**Indicators of Compromise**
-
-Host indicators:
-
-```text
-DOWNLOAD MASTERCAM X9 FULL CR
-Play.wp5
-Mysql.wp5
-Mysql.wp5.bat
-Runner.wp5
-Art.wp5
-Gba.wp5
-Romania.wp5
-Refugees.wp5
-Authorization.wp5
-Lock.wp5
-K
-Moscow.com
-C:\Users\Administrator\AppData\Local\Temp\448887\
-```
-
-Hash indicator:
-
-```text
-Play.wp5 SHA256:
-35efc15a41cf54a51703711e0b117b1899e4698bed1a4fdae638ebb7a3a190e0
-```
-
-<br>
-
 **Limitations**
 
 I did not fully complete the final C2-domain task. The investigation reached the point where the remaining analysis appeared to require deeper AutoIt payload decompilation or malware reverse engineering. In a real-world incident response scenario, I would expect the C2 domain to be identified through DNS, proxy, firewall, EDR/XDR, or SIEM telemetry before relying on decompilation of the payload.
