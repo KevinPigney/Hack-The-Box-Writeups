@@ -62,11 +62,9 @@ C:\Users\Administrator\AppData\Local\Temp\
 
 Several of these files used the `.wp5` extension. One file, `Play.wp5`, stood out due to its larger size. After inspecting and submitting it to VirusTotal, I identified it as an obfuscated Cabinet archive rather than a legitimate `.wp5` document.
 
-Relevant hash:
+![](./screenshots/wp5_files.PNG)
 
-```text
-35efc15a41cf54a51703711e0b117b1899e4698bed1a4fdae638ebb7a3a190e0
-```
+![](./screenshots/archive.PNG)
 
 <br>
 
@@ -88,6 +86,8 @@ extrac32 /Y Play.wp5 *.*
 
 This activity is consistent with the malware using a legitimate Windows utility to extract disguised payload components from the `.wp5` Cabinet archive.
 
+![](./screenshots/extrac32.PNG)
+
 <br>
 
 **Obfuscated Batch Script: mysql.wp5**
@@ -97,6 +97,8 @@ Another suspicious file, `mysql.wp5`, was later identified as an obfuscated batc
 ```text
 Mysql.wp5.bat
 ```
+
+![](./screenshots/mysql_wp5.PNG)
 
 VirusTotal and manual review showed that the script searched for security-related process strings, including:
 
@@ -111,7 +113,11 @@ ekrn
 
 While reviewing the `MOSCOW.COM` Prefetch artifact, I noticed that the files loaded section referenced: `C:\Users\Administrator\AppData\Local\Temp\448887\K`
 
+![](./screenshots/k_MFT.PNG)
+
 This stood out because K was not present as a normal file in the extracted archive or active Temp directory. The $UsnJrnl later helped explain this behavior by showing that K was created, written to, closed, and then deleted shortly after execution. This suggested that K was a short-lived runtime artifact rather than a static file included directly in the archive.
+
+![](./screenshots/k.PNG)
 
 Further review of mysql.wp5 explained this behavior. The script used many junk lines and variable substitutions to hide the real commands. After resolving the variables, the important behavior became clear: the batch script changed into the 448887 directory and used copy /b to concatenate several disguised .wp5 chunks into a single payload named K.
 
