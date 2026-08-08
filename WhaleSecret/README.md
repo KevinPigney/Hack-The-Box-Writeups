@@ -159,6 +159,8 @@ Superset cache file
 
 Once decoded, the commands and query order were pretty easy to follow.
 
+![](./screenshot/system-commands.PNG)
+
 <br>
 
 **Reverse-Shell Port**
