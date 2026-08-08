@@ -4,7 +4,7 @@ This write-up documents my investigation of a smaller Apache Superset-focused Sh
 
 I started this one on a whim on a summer Friday night and finished it in a couple hours. I have also been busy working my cybersecurity internship this summer, so I have not had the same amount of time to dedicate to detailed Sherlock notes. These are supposed to be a little more raw and casual while I get back into the swing of doing these investigations again.
 
-The main goal here was to document my thought process and the pivots that helped me answer the questions. Recruiters or anyone else reading my GitHub can still see how I worked through the evidence, even if this is not one of my full multi-day reports.
+The main goal here was to document my thought process and the pivots that helped me answer the questions. Anyone reading my GitHub can still see how I worked through the evidence, even if this is not one of my full multi-day reports.
 
 ### Objective
 
