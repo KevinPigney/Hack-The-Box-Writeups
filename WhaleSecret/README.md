@@ -38,18 +38,6 @@ After bypassing authentication, the attacker used Superset's SQL Lab feature to 
 
 <br>
 
-**Timeline of Key Events**
-
-| Timestamp | Event | Evidence |
-| --- | --- | --- |
-| Before `19:26:14` | Attacker performed reconnaissance against the Docker server | Container/network logs |
-| `2025-11-01 19:26:14` | First observed use of the Superset exploit | Docker HTTP logs |
-| `2025-11-01 19:27:42` | First operating-system command executed: `ls /etc/passwd` | SQL Lab cache and host execution evidence |
-| `2025-11-01 19:28:10` | Attacker executed `cat /etc/passwd` | SQL Lab cache |
-| `2025-11-01 19:28:38` | Reverse-shell payload was staged for `192.168.194[.]129:4242` | Decoded SQL Lab cache payload |
-
-<br>
-
 **Finding the Vulnerable Server and Port**
 
 The first question asked for the IP address and port of the vulnerable server.
