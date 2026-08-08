@@ -159,7 +159,7 @@ Superset cache file
 
 Once decoded, the commands and query order were pretty easy to follow.
 
-![](./screenshot/system-commands.PNG)
+![](./screenshot/system-commands.png)
 
 <br>
 
