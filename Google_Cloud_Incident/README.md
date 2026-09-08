@@ -194,7 +194,7 @@ I submitted `160.238.37.7` to VirusTotal for additional context. VirusTotal geol
 
 ![](./screenshots/VirusTotal.png)
 
-I also checked the IP using DracoEye, which confirmed the South Korean geolocation and displayed a hit near Seoul on its map. Unlike VirusTotal, DracoEye reported malicious or suspicious activity associated with the IP..
+I also checked the IP using DracoEye, which confirmed the South Korean geolocation and displayed a hit near Seoul on its map. Unlike VirusTotal, DracoEye reported malicious or suspicious activity associated with the IP.
 
 ![](./screenshots/geo-location.png)
 
