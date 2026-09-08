@@ -22,6 +22,8 @@ Super simple setup for this one:
 
 # Google_Cloud_Incident Sherlock - DFIR Write-up
 
+![](./screenshots/Google_Cloud_Incident.png)
+
 **Hack The Box Initial information:**
 
 A developer accidentally committed a Google Cloud identity’s key to a public repository. You’ve been tasked with investigating an attacker using the compromised identity attached to the exposed key to perform some nefarious activities.
