@@ -357,14 +357,14 @@ The attacker tried three times—twice in `europe-west1-b` and once in `us-east1
 Based on the available Google Cloud Audit Logs, the investigation supports the following conclusions:
 
 - The `main-dev@cyberwox-labs.iam.gserviceaccount.com` service account was the only identity associated with the activity in the provided logs.
-- All 17 events originated from the same IP address, 160.238.37.7, which was geolocated to South Korea through VirusTotal and DracoEye.
+- All 17 events originated from the same IP address, `160.238.37.7`, which was geolocated to South Korea through VirusTotal and DracoEye.
 - The account successfully enabled the IAM and Cloud Resource Manager APIs.
-- The attacker successfully created a firewall rule named default with a priority of 0.
-- The attacker attempted to create a network named default, but the request failed because the resource already existed.
-- Three separate attempts were made to create a GCE instance named crypto-instance.
-- The first two instance creation attempts targeted europe-west1-b, while the final attempt targeted us-east1-b.
+- The attacker successfully created a firewall rule named `default` with a priority of `0`.
+- The attacker attempted to create a network named `default`, but the request failed because the resource already existed.
+- Three separate attempts were made to create a GCE instance named `crypto-instance`.
+- The first two instance creation attempts targeted `europe-west1-b`, while the final attempt targeted `us-east1-b`.
 - Each instance requested an NVIDIA Tesla P100 GPU, suggesting the attacker may have intended to use the instances for cryptocurrency mining or another GPU-intensive task.
-- All three instance creation attempts failed with status code 8 and the message QUOTA_EXCEEDED because the project’s available GPU quota was set to 0.
+- All three instance creation attempts failed with status code `8` and the message `QUOTA_EXCEEDED` because the project’s available GPU quota was set to 0.
 
 Although the attacker successfully made changes within the Google Cloud environment, there is no evidence in the provided logs that any GCE instances were successfully created. The available evidence suggests that the compromised service account was used to prepare the environment and attempt to deploy a GPU-enabled virtual machine, but the lack of available GPU quota prevented the deployment from completing.
 
