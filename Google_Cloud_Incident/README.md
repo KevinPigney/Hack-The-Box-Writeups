@@ -198,11 +198,11 @@ I also checked the IP using DracoEye, which confirmed the South Korean geolocati
 
 ![](./screenshots/geo-location.png)
 
+![](./screenshots/DE.png)
+
 This difference is a good reminder to always cross-reference threat-intelligence sources and take IP reputation with a grain of salt. A newly used attacker IP may not have been reported yet, especially if the activity is recent or limited. On the other hand, legitimate cloud, hosting, VPN, or CDN addresses may be flagged because another user previously performed malicious activity through the same infrastructure.
 
 IP addresses can also be shared by multiple users through gateways or reassigned to different customers over time. This means an IP could be associated with malicious activity one day and used by a legitimate customer later.
-
-![](./screenshots/DE.png)
 
 Because of these factors, an IP being flagged does not automatically make it malicious, and an IP with no detections is not automatically safe. OSINT and threat-intelligence tools are best used for enrichment and context. Their results should always be compared with the actual behavior observed in the logs.
 
