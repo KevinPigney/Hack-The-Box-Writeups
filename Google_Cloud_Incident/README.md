@@ -190,19 +190,21 @@ Once the structure of the audit logs was understood, there was only one identity
 
 ### IP Geolocation
 
-I submitted `160.238.37.7` to VirusTotal for additional context. VirusTotal identified the IP as being geolocated in South Korea.
+I submitted `160.238.37.7` to VirusTotal for additional context. VirusTotal geolocated the IP address to South Korea but did not report any malicious or suspicious detections.
 
 ![](./screenshots/VirusTotal.png)
 
-I also checked the IP using DracoEye, which provided the same country result and displayed the location on a map near Seoul.
+I also checked the IP using DracoEye,Eyes, which confirmed the South Korean geolocation and displayed a hit near Seoul on its map. Unlike VirusTotal, DracoEye reported malicious or suspicious activity associated with the IP..
 
 ![](./screenshots/geo-location.png)
 
-VirusTotal is probably the most commonly used option for quickly enriching an IP address, but DracoEye is another tool I like to check afterward. Along with general threat-analysis results, it also provides geolocation and WHOIS information that can add a little more context. The map graphic is also pretty cool and makes the location easy to visualize.
+This difference is a good reminder to always cross-reference threat-intelligence sources and take IP reputation with a grain of salt. A newly used attacker IP may not have been reported yet, especially if the activity is recent or limited. On the other hand, legitimate cloud, hosting, VPN, or CDN addresses may be flagged because another user previously performed malicious activity through the same infrastructure.
+
+IP addresses can also be shared by multiple users through gateways or reassigned to different customers over time. This means an IP could be associated with malicious activity one day and used by a legitimate customer later.
 
 ![](./screenshots/DE.png)
 
-It is important to remember that IP geolocation does not prove the attacker was physically located in South Korea. The address could belong to a VPN, proxy, compromised system, or cloud provider. For this investigation, South Korea should only be treated as the reported geolocation of the source IP—not the confirmed physical location of the attacker.
+Because of these factors, an IP being flagged does not automatically make it malicious, and an IP with no detections is not automatically safe. OSINT and threat-intelligence tools are best used for enrichment and context. Their results should always be compared with the actual behavior observed in the logs.
 
 <br>
 
