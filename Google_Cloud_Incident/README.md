@@ -356,7 +356,7 @@ The attacker tried three times—twice in `europe-west1-b` and once in `us-east1
 
 Based on the available Google Cloud Audit Logs, the investigation supports the following conclusions:
 
-- The main-dev@cyberwox-labs.iam.gserviceaccount.com service account was the only identity associated with the activity in the provided logs.
+- The `main-dev@cyberwox-labs.iam.gserviceaccount.com` service account was the only identity associated with the activity in the provided logs.
 - All 17 events originated from the same IP address, 160.238.37.7, which was geolocated to South Korea through VirusTotal and DracoEye.
 - The account successfully enabled the IAM and Cloud Resource Manager APIs.
 - The attacker successfully created a firewall rule named default with a priority of 0.
