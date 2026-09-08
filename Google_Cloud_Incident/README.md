@@ -192,9 +192,15 @@ Once the structure of the audit logs was understood, there was only one identity
 
 I submitted `160.238.37.7` to VirusTotal for additional context. VirusTotal identified the IP as being geolocated in South Korea.
 
+![](./screenshots/VT.PNG)
+
 I also checked the IP using DracoEye, which provided the same country result and displayed the location on a map near Seoul.
 
+![](./screenshots/geo-location.PNG)
+
 VirusTotal is probably the most commonly used option for quickly enriching an IP address, but DracoEye is another tool I like to check afterward. Along with general threat-analysis results, it also provides geolocation and WHOIS information that can add a little more context. The map graphic is also pretty cool and makes the location easy to visualize.
+
+![](./screenshots/DE.PNG)
 
 It is important to remember that IP geolocation does not prove the attacker was physically located in South Korea. The address could belong to a VPN, proxy, compromised system, or cloud provider. For this investigation, South Korea should only be treated as the reported geolocation of the source IP—not the confirmed physical location of the attacker.
 
