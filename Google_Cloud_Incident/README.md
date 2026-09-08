@@ -192,7 +192,7 @@ Once the structure of the audit logs was understood, there was only one identity
 
 I submitted `160.238.37.7` to VirusTotal for additional context. VirusTotal identified the IP as being geolocated in South Korea.
 
-![](./screenshots/VT.png)
+![](./screenshots/VirusTotal.png)
 
 I also checked the IP using DracoEye, which provided the same country result and displayed the location on a map near Seoul.
 
