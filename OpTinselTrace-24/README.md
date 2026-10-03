@@ -46,7 +46,7 @@ Some of the primary tools and artifacts I used during this investigation include
 
 <br>
 
-# OpTinselTrace-1 2024 Sherlock - DFIR Write-up
+# OpTinselTrace24-1 Sherlock - DFIR Write-up
 
 ![](./screenshots/OpTinselTrace-1.png)
 
