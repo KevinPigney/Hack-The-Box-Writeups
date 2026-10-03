@@ -48,7 +48,7 @@ Some of the primary tools and artifacts I used during this investigation include
 
 # OpTinselTrace-1 2024 Sherlock - DFIR Write-up
 
-![](./screenshots/OpTinselTrace-1.PNG)
+![](./screenshots/OpTinselTrace-1.png)
 
 **Hack The Box Initial Information:**
 
