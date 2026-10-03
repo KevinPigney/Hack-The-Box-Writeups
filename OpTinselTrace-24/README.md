@@ -28,21 +28,27 @@ My primary objectives during this investigation were to determine:
 
 ---
 
-### Tools & Artifacts Used
+### Tools Used
 
-Some of the primary tools and artifacts I used during this investigation included:
+- Eric Zimmerman Tools
+  - Timeline Explorer
+  - Registry Explorer
+  - EvtxECmd
+  - PECmd
+  - LECmd
+- BMC-Tools
+
+### Artifacts Analyzed
 
 - Windows Prefetch
 - Windows Event Logs
-- Security.evtx
-- Microsoft-Windows-Bits-Client Operational logs
-- Microsoft-Windows-RemoteDesktopServices-RdpCoreTS Operational logs
-- Microsoft-Windows-TerminalServices-RDPClient Operational logs
+  - `Security.evtx`
+  - BITS Client Operational logs
+  - RDP CoreTS Operational logs
+  - Terminal Services RDP Client Operational logs
 - Amcache
-- Windows Remote Desktop bitmap cache
-- SRU / Network Usage artifacts
-- EZ-Tools (Timeline Explorer, Registry Explorer, EvtxCmd, PECmd, LECmd)
-- BMC-Tools
+- SRU / Network Usage
+- Remote Desktop bitmap cache
 
 <br>
 
