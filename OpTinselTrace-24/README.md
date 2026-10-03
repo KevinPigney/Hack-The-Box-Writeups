@@ -86,7 +86,7 @@ The payload was copied into `C:\Users\Public\` and then immediately executed.
 
 This gave me the initial compromise chain:
 
-**User opens malicious shortcut → ssh.exe executes → SCP downloads christmas-sale.exe → christmas-sale.exe executes**
+**User opens malicious shortcut -> ssh.exe executes -> SCP downloads christmas-sale.exe -> christmas-sale.exe executes**
 
 This activity aligns with **MITRE ATT&CK T1204.002 - User Execution: Malicious File**, since execution depended on the victim interacting with the malicious shortcut.
 
@@ -182,7 +182,7 @@ Analysis of the file metadata indicated that `candydandy.exe` was actually a ren
 
 The attacker was no longer simply maintaining command-and-control access. They had introduced credential-access tooling onto the compromised workstation.
 
-The sequence now suggested a deliberate progression: **Initial execution → host reconnaissance → secondary tool download → credential-access tooling staged**
+The sequence now suggested a deliberate progression: **Initial execution -> host reconnaissance -> secondary tool download -> credential-access tooling staged**
 
 This also helped explain the attacker's later ability to authenticate interactively and move deeper into the environment.
 
@@ -350,7 +350,7 @@ From those fragments, I was able to reconstruct the name: `christmaseve_gift`
 
 The surrounding context indicated that this was a persistence mechanism configured through **Windows Task Scheduler**.
 
-When combined with the earlier observation of `cookies.exe`, the likely sequence was: **Attacker downloads cookies.exe → attacker creates a scheduled task → scheduled task is named christmaseve_gift**
+When combined with the earlier observation of `cookies.exe`, the likely sequence was: **Attacker downloads cookies.exe -> attacker creates a scheduled task -> scheduled task is named christmaseve_gift**
 
 This provided evidence that the attacker was establishing persistence on the laterally compromised system. Importantly, this conclusion came entirely from graphical remnants cached on the original workstation rather than native forensic artifacts from `northpole-nippy`.
 
@@ -441,7 +441,7 @@ By parsing `Cache0000.bin` and manually reviewing thousands of graphical fragmen
 
 Taken together, the artifacts show a clear progression from:
 
-**Social Engineering → Execution → Command & Control → Discovery → Credential Access → Interactive Access → Persistence → Lateral Movement → Additional Persistence → Internal Reconnaissance**
+**Social Engineering -> Execution -> Command & Control -> Discovery -> Credential Access -> Interactive Access -> Persistence -> Lateral Movement -> Additional Persistence -> Internal Reconnaissance**
 
 The investigation also demonstrated the importance of artifact correlation. Several individual findings were not conclusive by themselves, but became much more meaningful when placed into the overall timeline and compared against evidence from Prefetch, Windows Event Logs, Amcache, SRU, RDP logs, and bitmap cache data.
 
