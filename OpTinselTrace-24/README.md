@@ -92,9 +92,7 @@ I parsed `christmas_slab.pdf.lnk` using Eric Zimmerman's `LECmd.exe`.
 
 ![](./screenshots/lnk-analysis.png)
 
-One particularly useful piece of metadata recovered from the shortcut was the machine name associated with its creation:
-
-`christmas-destr`
+One particularly useful piece of metadata recovered from the shortcut was the machine name associated with its creation: `christmas-destr`
 
 This provided an additional indicator potentially associated with the attacker's infrastructure or development environment - A great example of why I try not to stop after extracting the obvious command from a shortcut file. LNK metadata can often times provide valuable context regarding the system on which the file was created, original paths, volume information, timestamps, and other details that help build attribution or infrastructure leads.
 
