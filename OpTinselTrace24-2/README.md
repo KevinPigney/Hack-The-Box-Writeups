@@ -44,7 +44,7 @@ From there, I reviewed the service configuration to understand how the applicati
 
 The `flask-app-service` was configured as a: `NodePort` with: `NodePort: 30000/TCP` The service forwarded traffic to: `TargetPort: 5000/TCP` and the backend endpoints were: `10.42.0.14:5000`, `10.42.0.16:5000`, `10.42.0.17:5000`
 
-At a high level, the traffic flow would look something like: **External client → Kubernetes node:30000 → Service → one of the Flask pods:5000**
+At a high level, the traffic flow would look something like: **External client -> Kubernetes node:30000 -> Service -> one of the Flask pods:5000**
 
 Understanding this helped explain how an attacker outside of the individual pod network could still interact with the application.
 
@@ -96,7 +96,7 @@ This is a much stronger indicator of compromise than simply seeing an HTTP 200. 
 
 At this point, the attacker had achieved **remote command execution inside the Flask container with root privileges**.
 
-The attack path had progressed from: **Endpoint fuzzing → route discovery → HTTP method discovery → command execution as root**
+The attack path had progressed from: **Endpoint fuzzing -> route discovery -> HTTP method discovery -> command execution as root**
 
 <br>
 
@@ -144,7 +144,7 @@ The command instructs the shell to:
 2. Retrieve whatever content is returned
 3. Pipe that content directly into `bash`
 
-In other words: **Download shell code from the attacker's infrastructure → immediately execute it**
+In other words: **Download shell code from the attacker's infrastructure -> immediately execute it**
 
 Unlike downloading a script to disk first, piping directly into `bash` reduces the amount of obvious file-based evidence left behind.
 
@@ -236,4 +236,4 @@ At first, the cluster structure made the artifact set look more complicated than
 
 It was a good reminder that even when the underlying technology changes, the investigative process stays mostly the same:
 
-**Understand the environment → establish a timeline → identify abnormal behavior → pivot into related artifacts → correlate findings before drawing conclusions.**
+**Understand the environment -> establish a timeline -> identify abnormal behavior -> pivot into related artifacts -> correlate findings before drawing conclusions.**
