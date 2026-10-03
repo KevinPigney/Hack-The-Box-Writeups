@@ -38,6 +38,8 @@ My primary objectives during this investigation were to determine:
   - LECmd
 - BMC-Tools
 
+---
+
 ### Artifacts Analyzed
 
 - Windows Prefetch
