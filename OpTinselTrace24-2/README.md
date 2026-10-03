@@ -58,6 +58,8 @@ The log contained incoming HTTP requests to the Flask application, which made it
 
 Starting around: `2024-11-08 22:02:48`, I observed a large number of requests to different paths underneath: `/system/`, most of them returning: `404 Not Found`
 
+![](./screenshots/fuzzing.png)
+
 Examples included requests for endpoints such as: `/system/admin`, `/system/search`, `/system/download`, `/system/files`, `/system/tools` and many others.
 
 The volume and variety of requests strongly suggests **content or endpoint fuzzing**.
