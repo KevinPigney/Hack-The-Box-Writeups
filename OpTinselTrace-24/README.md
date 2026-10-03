@@ -36,7 +36,7 @@ My primary objectives during this investigation were to determine:
   - EvtxECmd
   - PECmd
   - LECmd
-- BMC-Tools
+- bmc-tools.py
 
 ---
 
@@ -44,7 +44,7 @@ My primary objectives during this investigation were to determine:
 
 - Windows Prefetch
 - Windows Event Logs
-  - `Security.evtx`
+  - Security
   - BITS Client Operational logs
   - RDP CoreTS Operational logs
   - Terminal Services RDP Client Operational logs
