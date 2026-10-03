@@ -306,7 +306,7 @@ The visual appearance resembled a typical `index.html` directory listing, includ
 
 Two directory names could be reconstructed: `candies/` and `sweets/`
 
-![](./screenshots/open-directories.png)
+![](./screenshots/open-directory.png)
 
 The `candies` directory immediately stood out because it matched the URI identified earlier in the BITS logs: `http://13.233.149.250/candies/candydandy.exe`
 
