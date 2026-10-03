@@ -174,6 +174,8 @@ After identifying the initial compromise, I returned to the rest of the Kubernet
 
 Inside the `default` namespace, I found an Alpine-based container named: `evil`
 
+![](./screenshots/evil-pod.png)
+
 That name obviously did not match the surrounding legitimate Flask application naming convention and immediately stood out.
 
 Alpine Linux is a lightweight Linux distribution frequently used for containers because of its very small footprint. The base image is only a few megabytes, which makes it quick to download and launch.
