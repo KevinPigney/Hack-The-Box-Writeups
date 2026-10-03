@@ -180,7 +180,7 @@ That name obviously did not match the surrounding legitimate Flask application n
 
 Alpine Linux is a lightweight Linux distribution frequently used for containers because of its very small footprint. The base image is only a few megabytes, which makes it quick to download and launch.
 
-There is nothing inherently malicious about Alpine—it is extremely common in legitimate container environments—but its use here, combined with the container name `evil` and the surrounding attacker activity, strongly indicated that it had been created during the compromise.
+There is nothing inherently malicious about Alpine, it is extremely common in legitimate container environments - but its use here, combined with the container name `evil` and the surrounding attacker activity, strongly indicated that it had been created during the compromise.
 
 The attacker had therefore moved beyond simply executing commands inside the original Flask application and had introduced an additional container into the environment.
 
