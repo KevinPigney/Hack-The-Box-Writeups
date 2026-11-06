@@ -52,8 +52,14 @@ My primary objectives during this investigation were to determine:
   - RDP CoreTS Operational logs
   - Terminal Services RDP Client Operational logs
 - Amcache
+- Windows Registry
 - SRU / Network Usage
 - Remote Desktop bitmap cache
+- Browser History
+- Microsoft Sticky Notes (plum.sqlite)
+- AWS CloudTrail
+- Kubernetes
+- Cron
 
 <br>
 
