@@ -805,6 +805,8 @@ During the conversation, Lanny mentioned having difficulties installing software
 
 The attacker instructed Lanny to download and execute the remote administration software, then share the connection information required to access her workstation.
 
+![](./screenshots/1.png)
+
 The IceChat conversation between lanny and W4nye contained the following details:
 - **Remote Access Tool:** `www.ammyy[.]com` (Ammyy Admin)
 - **Client ID:** `95192516`
@@ -843,7 +845,11 @@ The browser artifacts confirmed that Lanny visited the website provided in the I
 
 The download occurred at: `2024-11-13 12:08` providing with the first confirmation that the social engineering attempt had progressed beyond a conversation.
 
+![](./screenshots/2.png)
+
 I then pivoted into the **$MFT (Master File Table)** from `NORTHPOLE-LUMEN` to verify that the executable existed on the file system. The $MFT contained an entry for `AA_V3.EXE` inside Lanny's Downloads directory.
+
+![](./screenshots/3.png)
 
 This correlation gave me two independent sources of evidence:
 - **Microsoft Edge History:** Confirmed that the victim visited the website and downloaded `AA_V3.EXE`.
@@ -861,7 +867,11 @@ With `AA_V3.EXE` identified, I looked for artifacts that could establish whether
 
 One particularly useful artifact was: `C:\ProgramData\Ammyy\access.log`
 
+![](./screenshots/access.log.png)
+
 This log contained records associated with remote access sessions established through Ammyy Admin. While reviewing the log, I identified a session beginning at: `20241113-04:23:34.386000 0000273C`
+
+![](./screenshots/access.log-contents.png)
 
 The timestamp appeared to represent local system time. **I could not directly correlate the timestamp with the rest of the investigation without first determining the workstation's configured time zone.**
 
@@ -874,6 +884,8 @@ To resolve the timestamp discrepancy, I opened the workstation's `SYSTEM` regist
 I navigated to: `CurrentControlSet\Control\TimeZoneInformation`
 
 The registry information identified the system's configured time zone as: `Pacific Standard Time`
+
+![](./screenshots/timezone.png)
 
 Because the session occurred on November 13, 2024, after the transition from daylight saving time, Pacific local time was eight hours behind UTC.
 
@@ -907,6 +919,8 @@ I opened `plum.sqlite` using **DB Browser for SQLite** and began inspecting the 
 One note immediately stood out because it contained what appeared to be AWS programmatic access credentials. The note included:
 - **AWS Access Key ID:** `AKIA52GPOBQCBFYGAYHI`
 - **AWS Secret Access Key:** Present in plaintext within the note
+
+![](./screenshots/aws-keys.png)
 
 Finding these credentials was a significant development in my investigation.
 
@@ -953,6 +967,8 @@ Luckily, I already had a useful indicator from the earlier IceChat investigation
 Since I was investigating on Windows, I relied heavily on PowerShell as an alternative to Linux's grep to search through the CloudTrail logs.
 
 Rather than manually reviewing thousands of JSON files, I wrote a PowerShell script to search the compressed collection for the attacker's IP address.
+
+![](./screenshots/ps-script.png)
 
 Once I identified which archives contained matching events, I extracted those files into a separate evidence folder. This gave me a much smaller dataset to work with.
 
