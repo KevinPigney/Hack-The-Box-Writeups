@@ -749,7 +749,17 @@ That made this Sherlock especially useful from a DFIR perspective: the final ans
 
 # OpTinselTrace24-3 Sherlock - DFIR Write-up
 
+![](./screenshots/Blizzard-Breakdown.png)
+
 **Hack The Box Initial Information:**
+
+Furious after discovering he's been left off the Nice List this holiday season, one particular elf - heavily influenced by Krampus - goes rogue, determined to take revenge. Consumed by anger, he hatches a sinister plan to sabotage Christmas by targeting Santa Claus' most critical asset - its S3 data archive!
+
+This repository holds sensitive information, including blueprints for new toys, holiday logistics, toy production schedules, and most importantly, the coveted gift list! With Christmas preparations in full swing, any disruption to this storage could cause chaos across the entire operation, threatening to derail everyone's holiday season.
+
+Will the holiday magic prevail, or will Christmas fall into dismay?
+
+### Introduction to pt. 3
 
 This part of the OpTinselTrace24 investigation focuses on the compromise of Lanny's workstation and the attacker's subsequent activity within AWS cloud storage.
 
