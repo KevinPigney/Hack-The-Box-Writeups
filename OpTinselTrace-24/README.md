@@ -32,11 +32,14 @@ My primary objectives during this investigation were to determine:
 
 - Eric Zimmerman Tools
   - Timeline Explorer
+  - MFT Explorer
   - Registry Explorer
   - EvtxECmd
   - PECmd
   - LECmd
 - bmc-tools.py
+- DB Browser for SQLite
+- PowerShell
 
 ---
 
