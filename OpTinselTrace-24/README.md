@@ -726,27 +726,471 @@ Based on the available evidence, the attack can be reconstructed as:
 
 ## Final Assessment
 
-OpTinselTrace-2 was a much shorter investigation than the first part, but it introduced a completely different forensic environment.
-
-Instead of relying on Windows Prefetch, Event Logs, Amcache, and RDP artifacts, this investigation required correlating Kubernetes configuration, pod logs, host processes, container activity, and Linux persistence artifacts.
+OpTinselTrace-2 was a much shorter investigation than the first part, but it introduced a completely different forensic environment. Instead of relying on Windows Prefetch, Event Logs, Amcache, and RDP artifacts, this investigation required correlating Kubernetes configuration, pod logs, host processes, container activity, and Linux persistence artifacts.
 
 The Flask application logs were especially useful because they preserved the attacker's progression almost step-by-step.
 
-The attacker began with broad endpoint fuzzing and identified `/system/execute` after receiving a `405 Method Not Allowed` response. They then transitioned to targeted POST requests, eventually discovering that the endpoint passed user-controlled input into `os.system()`.
-
-Successful execution of the `id` command showed that the Flask application was running attacker-supplied commands as `root`.
-
-The attacker then attempted several methods of establishing more reliable access, discovered that Netcat and Curl were unavailable, installed Curl through the Debian package manager, and used it to retrieve and execute additional attacker-controlled code from `10.129.231.112:8080`.
+The attacker began with broad endpoint fuzzing and identified `/system/execute` after receiving a `405 Method Not Allowed` response. They then transitioned to targeted POST requests, eventually discovering that the endpoint passed user-controlled input into `os.system()`. Successful execution of the `id` command showed that the Flask application was running attacker-supplied commands as `root`. The attacker then attempted several methods of establishing more reliable access, discovered that Netcat and Curl were unavailable, installed Curl through the Debian package manager, and used it to retrieve and execute additional attacker-controlled code from `10.129.231.112:8080`.
 
 Additional artifacts showed the presence of a suspicious Alpine container named `evil` and a cron-based persistence mechanism executing `/opt/backdoor.sh` every five minutes.
 
-For me, the biggest takeaway from this part was simply getting more comfortable with **Kubernetes forensic collections**.
-
-At first, the cluster structure made the artifact set look more complicated than it really was. Once I understood the relationship between the Service, the three Flask pod replicas, the application logs, and the host-level artifacts, the attack became much easier to reconstruct.
+For me, the biggest takeaway from this part was simply getting more comfortable with **Kubernetes forensic collections**. At first, the cluster structure made the artifact set look more complicated than it really was. Once I understood the relationship between the Service, the three Flask pod replicas, the application logs, and the host-level artifacts, the attack became much easier to reconstruct.
 
 It was a good reminder that even when the underlying technology changes, the investigative process stays mostly the same:
 
 **Understand the environment -> establish a timeline -> identify abnormal behavior -> pivot into related artifacts -> correlate findings before drawing conclusions.**
 
-
 That made this Sherlock especially useful from a DFIR perspective: the final answers depended less on finding a single event log entry and more on recognizing what evidence should exist, understanding what was missing, and finding another artifact capable of filling that gap.
+
+<br>
+
+# OpTinselTrace24-3 Sherlock - DFIR Write-up
+
+**Hack The Box Initial Information:**
+
+This part of the OpTinselTrace24 investigation focuses on the compromise of Lanny's workstation and the attacker's subsequent activity within AWS cloud storage.
+
+Unlike the previous Sherlock, which involved investigating a vulnerable Kubernetes application, this challenge brought me back into familiar Windows forensic artifacts before introducing something I hadn't worked with before: **AWS CloudTrail logs**.
+
+The investigation started with reconstructing a social engineering attack through IceChat conversations, identifying unauthorized remote access through Ammyy Admin, and discovering exposed AWS credentials stored in Microsoft Sticky Notes. From there, I transitioned into CloudTrail to trace the attacker's activity within the AWS environment.
+
+CloudTrail was completely new territory for me, but one thing this investigation reinforced is that **having a strong investigative methodology makes unfamiliar artifacts much easier to approach**.
+
+Rather than immediately searching through thousands of logs hoping to find something suspicious, I spent time understanding how CloudTrail records events, what information each event contains, and how that information is organized within the JSON structure. Once I understood fields such as `eventTime`, `eventName`, `sourceIPAddress`, and `requestParameters`, investigating the logs became much more straightforward.
+
+I could search for specific AWS operations, filter events by the attacker's known IP address, and piece together a timeline of their activity.
+
+This is a workflow I've found useful across almost every type of log analysis, regardless of the technology involved:
+
+**Understand the artifact -> Identify the available fields -> Learn how the data is structured -> Search using known indicators -> Correlate events -> Reconstruct the activity**
+
+Whether you're investigating Windows Event Logs, web server logs, EDR telemetry, or AWS CloudTrail, the general approach stays largely the same.
+
+One thing I would strongly recommend to anyone getting into DFIR is developing their own repeatable investigative methodology. When you encounter an unfamiliar artifact, take the time to understand what it records, how the information is presented, and which fields might be useful before diving straight into searching for answers.
+
+That initial effort can save a significant amount of time later, and more importantly, it helps you understand **why the evidence matters rather than simply knowing where to find it**.
+
+For me, this Sherlock was a great reminder that you don't need to be an expert in every technology before you start investigating it. Having a reliable process for approaching unfamiliar evidence is often just as valuable as knowing the artifact itself.
+
+<br>
+
+## Initial Investigation - IceChat Conversation Logs
+
+I started by examining the IceChat logs associated with Lanny's user account.
+
+One conversation immediately stood out to me: `W4yne-2024-11-13.log`
+
+The log contained a conversation between Lanny and another user named `W4yne`, who appeared to be impersonating a legitimate coworker or support contact.
+
+During the conversation, Lanny mentioned having difficulties installing software because she did not have administrative privileges on her workstation. Rather than helping her through an approved administrative process, W4yne directed Lanny to visit: `www.ammyy[.]com`
+
+The attacker instructed Lanny to download and execute the remote administration software, then share the connection information required to access her workstation.
+
+The IceChat conversation between lanny and W4nye contained the following details:
+- **Remote Access Tool:** `www.ammyy[.]com` (Ammyy Admin)
+- **Client ID:** `95192516`
+- **Session Password:** `48480`
+- **Attacker IP Address:** `146.70.202[.]35`
+
+Ammyy Admin is a legitimate remote administration tool. However, the user was explicitly instructed to provide the information required for someone else to remotely control her machine. The attacker was effectively convincing the victim to establish the remote access session on their behalf.
+
+This activity is consistent with **MITRE ATT&CK T1219 - Remote Access Tools**, since legitimate remote administration software was being used to facilitate unauthorized access.
+
+<br>
+
+## Understanding Lanny's Role and Access
+
+Before moving directly into the remote access artifacts, I reviewed Lanny's previous IceChat conversations to understand what she had been working on.
+
+Two conversations provided particularly useful context:
+
+In a conversation with `Patch`, Lanny mentioned being tasked with restoring **confidential AWS S3 Glacier files** and placing the restored data into a shared file directory.
+
+Another conversation with `GrandElf` indicated that Lanny had been assigned to help with the organization's new file server.
+
+These details became much more significant later in the investigation.
+
+At first, they simply helped establish Lanny's responsibilities within the environment. However, they also indicated that her workstation might contain access to sensitive cloud storage resources or credentials associated with the AWS restoration process.
+
+This gave me an additional question to investigate: **Was the attacker targeting Lanny specifically because of her involvement with the AWS archive restoration and file server operations?**
+
+<br>
+
+## Validating the Malicious Software Download
+
+After identifying the URL shared by W4yne, my next priority was determining whether Lanny actually followed the attacker's instructions. For this, I examined the user's **Microsoft Edge browsing history**.
+
+The browser artifacts confirmed that Lanny visited the website provided in the IceChat conversation and downloaded an executable named: `AA_V3.EXE`
+
+The download occurred at: `2024-11-13 12:08` providing with the first confirmation that the social engineering attempt had progressed beyond a conversation.
+
+I then pivoted into the **$MFT (Master File Table)** from `NORTHPOLE-LUMEN` to verify that the executable existed on the file system. The $MFT contained an entry for `AA_V3.EXE` inside Lanny's Downloads directory.
+
+This correlation gave me two independent sources of evidence:
+- **Microsoft Edge History:** Confirmed that the victim visited the website and downloaded `AA_V3.EXE`.
+- **NTFS $MFT:** Confirmed the presence of the downloaded executable in the user's Downloads folder.
+
+Together, these artifacts supported the conclusion that Lanny had downloaded the remote administration tool as instructed.
+
+The next question was whether the attacker had successfully used it to establish a remote session.
+
+<br>
+
+## Confirming Unauthorized Remote Access
+
+With `AA_V3.EXE` identified, I looked for artifacts that could establish whether Ammyy Admin had actually been used to connect to the workstation.
+
+One particularly useful artifact was: `C:\ProgramData\Ammyy\access.log`
+
+This log contained records associated with remote access sessions established through Ammyy Admin. While reviewing the log, I identified a session beginning at: `20241113-04:23:34.386000 0000273C`
+
+The timestamp appeared to represent local system time. **I could not directly correlate the timestamp with the rest of the investigation without first determining the workstation's configured time zone.**
+
+<br>
+
+## Determining the System Time Zone
+
+To resolve the timestamp discrepancy, I opened the workstation's `SYSTEM` registry hive using **Eric Zimmerman's Registry Explorer**.
+
+I navigated to: `CurrentControlSet\Control\TimeZoneInformation`
+
+The registry information identified the system's configured time zone as: `Pacific Standard Time`
+
+Because the session occurred on November 13, 2024, after the transition from daylight saving time, Pacific local time was eight hours behind UTC.
+
+Using this offset, I converted the Ammyy Admin session timestamp:
+- **Local Time:** `2024-11-13 04:23:34`
+- **Time Zone:** Pacific Standard Time (UTC-8)
+- **UTC Time:** `2024-11-13 12:23:34`
+
+**Attacker provides download URL -> victim downloads Ammyy Admin -> victim shares connection details -> remote session is established**
+
+This was a useful example of why time zone normalization matters during forensic investigations. Without checking the registry, it would have been easy to incorrectly place the remote session several hours before the victim downloaded the software.
+
+<br>
+
+## Investigating Potential AWS Credential Exposure
+
+After establishing that the attacker had gained remote access to Lanny's workstation, I shifted my focus toward determining how the attacker could have accessed the organization's AWS environment.
+
+The earlier IceChat conversations were important here.
+
+Lanny had been assigned to restore confidential data from AWS S3 Glacier, so I started considering where credentials or connection information associated with that task might have been stored locally.
+
+During my review of the workstation, I noticed that Lanny had been using **Microsoft Sticky Notes**.
+
+Sticky Notes can contain useful forensic evidence because the application stores note content inside a local SQLite database.
+
+The relevant file was: `C:\Users\lannyl\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\plum.sqlite`
+
+I opened `plum.sqlite` using **DB Browser for SQLite** and began inspecting the stored note contents.
+
+One note immediately stood out because it contained what appeared to be AWS programmatic access credentials. The note included:
+- **AWS Access Key ID:** `AKIA52GPOBQCBFYGAYHI`
+- **AWS Secret Access Key:** Present in plaintext within the note
+
+Finding these credentials was a significant development in my investigation.
+
+Unlike an AWS console login, an access key ID and secret access key can be used by applications, scripts, and AWS command-line tools to authenticate programmatically, provided the credentials are valid and have the necessary permissions. If the attacker could access Lanny's desktop through Ammyy Admin, they likely had access to these locally stored credentials as well.
+
+At this stage, I had identified a plausible credential exposure path:
+
+**Social engineering -> unauthorized remote desktop access -> locally stored AWS credentials -> potential access to cloud resources**
+
+The presence of the credentials on the workstation did not independently prove that the attacker copied or used them. However, it provided an explanation worth testing against AWS authentication and activity logs.
+
+<br>
+
+## Pivoting Into AWS CloudTrail
+
+With a potential AWS credential exposure identified, I moved away from Windows host artifacts and into the provided AWS CloudTrail logs.
+
+CloudTrail records activity within an AWS environment, including which actions were performed, when they occurred, which accounts were involved, and the IP addresses associated with those requests.
+
+Since CloudTrail was a new artifact for me, I spent some time getting familiar with how the logs were structured before jumping into the investigation.
+
+The logs were stored as compressed JSON files (.json.gz), and each event contained useful fields such as:
+
+- `eventTime` -> When the action occurred.
+
+- `eventName` -> What AWS action was performed, such as GetObject or DeleteObject.
+
+- `sourceIPAddress` -> The IP address associated with the request.
+
+- `userIdentity` -> Information about the AWS identity making the request.
+
+- `requestParameters` -> Additional details about the request, such as the targeted bucket or file.
+
+Once I understood how these fields were organized, searching for specific activity became much easier.
+
+The biggest challenge was the size of the collection. There were thousands of compressed CloudTrail files, and manually opening each one wasn't going to be practical.
+
+Luckily, I already had a useful indicator from the earlier IceChat investigation: `146.70.202.35` my goal was to determine whether this IP appeared in CloudTrail and, if it did, use those events to trace what the attacker was doing in AWS.
+
+<br>
+
+## Scoping CloudTrail Logs With PowerShell
+
+Since I was investigating on Windows, I relied heavily on PowerShell as an alternative to Linux's grep to search through the CloudTrail logs.
+
+Rather than manually reviewing thousands of JSON files, I wrote a PowerShell script to search the compressed collection for the attacker's IP address.
+
+Once I identified which archives contained matching events, I extracted those files into a separate evidence folder. This gave me a much smaller dataset to work with.
+
+From there, most of the investigation involved searching the extracted CloudTrail logs for specific AWS operations such as `GetObject`, `RestoreObject`, `PutObject`, and `DeleteObject`.
+
+For anyone working on Windows, one particularly useful PowerShell cmdlet is: `Select-String`
+
+It works similarly to grep in Linux, allowing you to search through files for specific text or patterns.
+
+For example, to search through extracted CloudTrail JSON files for the attacker's IP address:
+
+`Get-ChildItem "C:\Evidence\CloudTrail" -Filter *.json -Recurse | Select-String -Pattern "146.70.202.35"`
+
+This searches all .json files in the specified directory and its subdirectories, returning any lines containing the attacker's IP address.
+
+You can easily change the search pattern to look for specific AWS operations instead.
+
+For example, to find events involving deleted S3 objects:
+
+`Get-ChildItem "C:\Evidence\CloudTrail" -Filter *.json -Recurse | Select-String -Pattern '"eventName"\s*:\s*"DeleteObject"'`
+
+This was essentially the approach I used throughout the rest of the investigation: identify the AWS operation I was interested in, search for it using PowerShell, and then examine the matching events to determine what the attacker did. One important distinction is that Select-String searches the text inside files rather than understanding the JSON structure itself. For more detailed investigations, PowerShell's ConvertFrom-Json cmdlet can be used to parse the CloudTrail records and filter individual fields more precisely.
+
+Also, the examples above search extracted `.json` files, not compressed `.json.gz` archives. Those need to be decompressed first.
+
+The overall workflow was fairly straightforward:
+
+**Identify attacker IP -> Search compressed logs -> Extract matching archives -> Search for specific AWS operations -> Build attack timeline**
+
+This was a good reminder that you don't always need specialized tools to investigate unfamiliar logs. Once you understand what information the logs contain and how it's structured, something as simple as PowerShell can be extremely useful for narrowing down suspicious activity.
+
+More importantly, this same approach can be applied to many other types of logs, not just AWS CloudTrail.
+
+<br>
+
+## Identifying the Targeted AWS S3 Bucket
+
+With the CloudTrail logs narrowed down, I started looking at what AWS resources the attacker had been interacting with.
+
+CloudTrail records actions performed in AWS, including when they happened, what action was performed, and which IP address made the request.
+
+For S3 activity, one useful field is `bucketName`, which identifies the storage bucket involved. After reviewing the events associated with the attacker's IP address, I identified the targeted bucket: `arctic-archive-freezer`
+
+This was interesting because Lanny's earlier IceChat conversations mentioned that she had been assigned to restore confidential files from AWS Glacier.
+
+At this point, I had a few pieces of evidence beginning to connect:
+- IceChat showed that Lanny was working with confidential AWS files.
+- Microsoft Sticky Notes contained AWS credentials stored on her workstation.
+- CloudTrail showed suspicious activity involving the `arctic-archive-freezer` bucket.
+
+The next step was figuring out which files inside the bucket the attacker was targeting.
+
+<br>
+
+## Identifying the Targeted Directory
+
+After identifying the bucket, I examined the object paths recorded in the CloudTrail events. S3 doesn't use traditional folders in the same way Windows does. Instead, it stores objects using keys, which can look like normal file paths. For example: `Folder/Subfolder/file.txt`
+
+By reviewing the object keys associated with the suspicious requests, I identified the main directory being targeted: `Claus_Operation_Data`
+
+This helped narrow down the investigation even further. I now knew both the storage bucket and the specific group of files the attacker was interested in.
+
+<br>
+
+## Disabling S3 Object Versioning
+
+One of the more suspicious actions I found was an AWS operation called: `PutBucketVersioning`
+
+S3 Versioning is a feature that allows AWS to keep previous versions of files when they are modified or overwritten. Think of it like having older copies of a document available in case someone accidentally changes or deletes the original. For an attacker trying to destroy or corrupt files, this protection can make their job more difficult.
+
+While reviewing `PutBucketVersioning` events, I found that the attacker changed the bucket's versioning status to: `Suspended` This occurred at: **`2024-11-13 15:31:15 UTC`**
+
+By suspending versioning, the attacker prevented new versions from automatically being created for future changes to objects in the bucket. This would make it more difficult to recover certain files if they were subsequently overwritten or deleted. Previously saved versions would not automatically disappear, though.
+
+This activity aligns with **MITRE ATT&CK T1490 - Inhibit System Recovery**.
+
+It was also an important finding because it suggested the attacker wasn't simply interested in reading the archived files. They were preparing to modify or destroy them.
+
+<br>
+
+## Identifying the First Glacier Restore Operation
+
+Next, I wanted to determine when the attacker began trying to access the archived files. Since these objects were stored in S3 Glacier, they needed to be restored before their contents could be accessed. The AWS operation responsible for initiating this process is: `RestoreObject`
+
+I filtered the CloudTrail records for `RestoreObject` events associated with the attacker's IP address and sorted them by their timestamps. The first restore operation was recorded at: **`2024-11-13 15:43:49 UTC`** approximately 12 minutes after the attacker suspended S3 versioning.
+
+<br>
+
+## Identifying the Glacier Retrieval Tier
+
+After finding the first `RestoreObject` event, I looked more closely at the request details. One field that stood out was: `GlacierJobParameters` This contained the retrieval tier the attacker selected when requesting the archived files. The value was: `Expedited`
+
+AWS Glacier offers different retrieval options depending on how quickly the data needs to become available. By choosing `Expedited`, the attacker was requesting one of the fastest available restoration methods. This suggested they wanted access to the archived files as quickly as possible rather than waiting for a slower restoration process.
+
+<br>
+
+## Investigating Object Deletion Activity
+
+After looking at the restore operations, I searched for evidence that the attacker had tried to delete files from the bucket.
+
+For this, I focused on the AWS operation: `DeleteObject` this operation is used to delete objects stored in S3.
+
+While reviewing the suspicious events, I identified a deletion attempt involving: `GiftList_Worldwide.csv` this was an important finding because it showed the attacker was doing more than requesting access to archived data. They were also attempting to remove files from the bucket.
+
+When combined with the earlier versioning change, the activity suggested an effort to damage the stored information while making recovery more difficult.
+
+<br>
+
+## Determining the Size of the Targeted Data
+
+Another part of the investigation involved determining how much data the attacker downloaded from the S3 bucket. For this, I focused on the AWS operation: `GetObject` this operation is used to retrieve or download files from an S3 bucket.
+
+I filtered the CloudTrail logs for `GetObject` events involving the file: `Claus_Operation_Data/gift_lists/GiftList_Worldwide.csv` one useful field in these events was `bytesTransferredOut`, which records how many bytes were sent during each request.
+
+While reviewing the results, I noticed multiple download records associated with the same file. This can happen when the AWS CLI downloads a large file in smaller chunks rather than transferring everything in a single request.
+
+Using PowerShell, I counted the matching records and added together their `bytesTransferredOut` values to calculate the total amount of data transferred. After converting the total from bytes to megabytes (MB), I determined that the file was approximately: **`152 MB`**
+
+<br>
+
+## Identifying When the Attacker Began Replacing Files
+
+After investigating the restore and delete operations, I wanted to see whether the attacker had also uploaded or overwritten anything inside the bucket.
+
+For this, I searched for another AWS operation: `PutObject` this operation is used to upload files into an S3 bucket. If an object is uploaded using the same key as an existing file, it can replace the current version of that file, depending on the bucket's configuration.
+
+I sorted the suspicious `PutObject` events by timestamp to identify when the first replacement occurred. The first object replacement was recorded at: **`2024-11-13 16:10:00 UTC`**
+
+Combined with the earlier events, the sequence was beginning to make sense:
+
+**Suspend Versioning -> Restore Archived Files -> Delete Objects -> Upload Modified Files**
+
+Instead of just accessing confidential information, the attacker appeared to be carrying out a form of data sabotage.
+
+<br>
+
+## Identifying the Storage Class Used to Hide Modified Files
+
+One final detail I investigated was how the attacker configured the files they uploaded. AWS S3 offers different storage classes, which determine how objects are stored and accessed.
+
+While reviewing the suspicious `PutObject` requests, I examined the `StorageClass` field. The value was: `GLACIER` this was interesting because the original files were already stored in an archival environment. By uploading modified objects using the `GLACIER` storage class, the attacker kept their storage settings consistent with the surrounding archived data.
+
+This could help the modified files blend in rather than immediately appearing unusual to someone reviewing the bucket. The storage class alone doesn't prove the attacker was intentionally hiding their activity, but it makes sense when viewed alongside the other suspicious actions.
+
+<br>
+
+## Attack Timeline
+
+Based on the artifacts I reviewed, the attack can be reconstructed as follows:
+- **Initial Social Engineering:** The rogue elf `W4yne` contacts Lanny through IceChat and convinces her to download Ammyy Admin.
+- **Remote Access Preparation:** Lanny provides her Ammyy Admin Client ID and password to the attacker.
+- **12:08 UTC - November 13, 2024:** Microsoft Edge history records the download of `AA_V3.EXE`.
+- **File System Evidence:** The `NORTHPOLE-LUMEN` $MFT confirms the executable was downloaded to Lanny's workstation.
+- **12:23:34 UTC:** Ammyy Admin's `access.log` records a remote access session.
+- **Credential Exposure:** Microsoft Sticky Notes contains AWS credentials stored in the `plum.sqlite` database.
+- **CloudTrail Investigation:** The attacker's IP address, `146.70.202.35`, appears in CloudTrail records involving AWS storage.
+- **Target Identification:** The attacker targets the `arctic-archive-freezer` S3 bucket and the `Claus_Operation_Data` directory.
+- **15:31:15 UTC:** The attacker uses `PutBucketVersioning` to suspend object versioning, making recovery from future changes more difficult.
+- **15:43:49 UTC:** The first `RestoreObject` operation is initiated using the `Expedited` Glacier retrieval tier.
+- **Object Deletion:** The attacker attempts to delete `GiftList_Worldwide.csv` using `DeleteObject`.
+- **Data Size:** The targeted S3 object or transfer is identified as approximately `152 MB`.
+- **16:10:00 UTC:** The first suspicious `PutObject` upload replaces an object in the targeted bucket.
+- **Storage Class:** The attacker uses `GLACIER` for the uploaded files, keeping their storage settings consistent with the archived data.
+
+<br>
+
+## Final Assessment
+
+OpTinselTrace24-3 was interesting because the investigation started with a simple social engineering attack but eventually led into AWS cloud forensics. The attacker didn't need to exploit a complicated vulnerability to gain access to Lanny's workstation. Instead, they used IceChat to convince her to download Ammyy Admin and share the information required to establish a remote connection.
+
+By correlating IceChat messages, Microsoft Edge history, the $MFT, and Ammyy Admin logs, I was able to reconstruct how the attacker gained remote access. One important part of this process was checking the system's time zone through the Windows registry. This allowed me to convert the Ammyy Admin session timestamp into UTC and compare it with the other evidence.
+
+The investigation became more interesting when I discovered AWS credentials stored inside Lanny's Microsoft Sticky Notes database. Earlier conversations had already established that Lanny was working with confidential AWS Glacier files, so finding those credentials provided a possible explanation for how the attacker could have accessed the cloud environment. From there, I moved into the AWS CloudTrail logs.
+
+Because the collection contained thousands of compressed files, I used PowerShell to search for the attacker's IP address and extract only the matching logs. This made the investigation much easier to manage. The CloudTrail activity showed that the attacker targeted the `arctic-archive-freezer` bucket, specifically the `Claus_Operation_Data` directory.
+
+The attacker then performed several suspicious actions:
+- Suspended S3 versioning to make future file changes more difficult to recover.
+- Requested expedited restoration of archived files.
+- Attempted to delete `GiftList_Worldwide.csv`.
+- Uploaded files that appeared to replace legitimate archived objects.
+- Used the `GLACIER` storage class to keep the uploaded files consistent with the original storage configuration.
+
+The timestamps helped establish the order of these actions and showed that this was more than someone simply browsing through an AWS bucket. The attacker appeared to be deliberately interfering with the organization's archived data.
+
+The overall attack path can be summarized as:
+
+**Social Engineering -> Remote Access -> Potential Credential Theft -> AWS Access -> Versioning Suspension -> Glacier Restoration -> File Deletion and Modification**
+
+For me, the biggest takeaway from this Sherlock was learning how to connect Windows host evidence with AWS cloud activity.
+
+The IceChat logs explained how the attacker contacted the victim. Browser history and the $MFT confirmed the software download. Ammyy Admin logs showed the remote connection, and Microsoft Sticky Notes revealed potentially exposed AWS credentials.
+
+Finally, CloudTrail helped reconstruct what happened inside the cloud environment.
+
+This was a good example of how an investigation can start with a single suspicious conversation and eventually uncover a much larger attack involving multiple systems and technologies.
+
+<br>
+
+## Key Indicators
+
+- **Compromised User:** `lannyl`
+- **Compromised Workstation:** `NORTHPOLE-LUMEN`
+- **Rogue IceChat User:** `W4yne`
+- **IceChat Log:** `W4yne-2024-11-13.log`
+- **Attacker IP Address:** `146.70.202[.]35`
+- **Social Engineering URL:** `www.ammyy[.]com`
+- **Remote Access Software:** Ammyy Admin
+- **Downloaded Executable:** `AA_V3.EXE`
+- **Ammyy Client ID:** `95192516`
+- **Remote Access Session:** `2024-11-13 12:23:34 UTC`
+- **Remote Access Log:** `C:\ProgramData\Ammyy\access.log`
+- **Credential Storage Artifact:** `plum.sqlite`
+- **AWS Access Key ID:** `AKIA52GPOBQCBFYGAYHI`
+- **Targeted S3 Bucket:** `arctic-archive-freezer`
+- **Targeted Directory:** `Claus_Operation_Data`
+- **Deleted File Target:** `GiftList_Worldwide.csv`
+- **Relevant AWS API Operations:** `PutBucketVersioning`, `RestoreObject`, `DeleteObject`, `PutObject`
+- **Glacier Retrieval Tier:** `Expedited`
+- **Suspicious Versioning Status:** `Suspended`
+- **Uploaded Object Storage Class:** `GLACIER`
+
+<br>
+
+## MITRE ATT&CK Mapping
+
+The activity observed during the investigation included:
+- **T1219 - Remote Access Tools**
+  - The attacker convinced Lanny to download Ammyy Admin and share her connection details, allowing unauthorized remote access.
+
+- **T1078.004 - Valid Accounts: Cloud Accounts**
+  - AWS credentials were found on Lanny's workstation and may have been used to access cloud resources. Confirming this would require matching the credentials to CloudTrail activity.
+
+- **T1490 - Inhibit System Recovery**
+  - The attacker suspended S3 object versioning through `PutBucketVersioning`, making certain future file changes more difficult to recover.
+
+- **T1530 - Data from Cloud Storage Object**
+  - The attacker initiated restoration of archived S3 objects, potentially preparing them for retrieval. Additional download evidence would help confirm collection of the data.
+
+Additional activity was consistent with data destruction and manipulation of cloud storage objects.
+
+<br>
+
+## Next Steps
+
+If this were a real incident, my next steps would include:
+
+- Isolate Lanny's workstation and terminate any active Ammyy Admin sessions.
+- Search for other systems communicating with `146.70.202.35`.
+- Determine whether W4yne contacted any other employees through IceChat.
+- Revoke the exposed AWS access key and rotate any associated credentials.
+- Review CloudTrail to determine which AWS account or IAM user performed the suspicious actions.
+- Check whether the archived objects were actually downloaded or transferred outside the environment.
+- Review all `DeleteObject` and `PutObject` activity to identify deleted or modified files.
+- Compare modified files against known-good versions or backups.
+- Determine whether any previous S3 object versions can still be recovered.
+- Re-enable the appropriate S3 versioning configuration and review bucket permissions.
+- Investigate whether additional AWS credentials were exposed on the compromised workstation.
+
+The biggest lesson from this investigation was that **a simple social engineering attack against one workstation can potentially lead to much more serious damage elsewhere in an environment**. What started with a suspicious IceChat conversation eventually led to an investigation involving remote desktop access, exposed cloud credentials, and possible sabotage of confidential AWS data. Following the evidence across different artifacts made it possible to understand how those activities were connected.
