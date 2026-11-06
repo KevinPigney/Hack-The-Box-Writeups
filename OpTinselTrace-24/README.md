@@ -40,6 +40,7 @@ My primary objectives during this investigation were to determine:
 - bmc-tools.py
 - DB Browser for SQLite
 - PowerShell
+- Wireshark
 
 ---
 
@@ -60,6 +61,9 @@ My primary objectives during this investigation were to determine:
 - AWS CloudTrail
 - Kubernetes
 - Cron
+- Packet Capture
+- Linux Authentication Logs
+- Linux Command History
 
 <br>
 
@@ -1229,3 +1233,326 @@ If this were a real incident, my next steps would include:
 - Investigate whether additional AWS credentials were exposed on the compromised workstation.
 
 The biggest lesson from this investigation was that **a simple social engineering attack against one workstation can potentially lead to much more serious damage elsewhere in an environment**. What started with a suspicious IceChat conversation eventually led to an investigation involving remote desktop access, exposed cloud credentials, and possible sabotage of confidential AWS data. Following the evidence across different artifacts made it possible to understand how those activities were connected.
+
+# OpTinselTrace24-4 Sherlock - DFIR Write-up
+
+![](./screenshots/Neural-Noel.png)
+
+**Hack The Box Initial Information:**
+
+Santa's North Pole Operations is developing an AI chatbot to handle the overwhelming volume of messages, gift requests, and communications from children worldwide during the holiday season. The AI system is designed to process these requests efficiently and provide support in case of any issues.
+
+As Christmas approaches, Santa's IT team observes unusual activity in the AI system. Suspicious files are being accessed, and the system is making unusual HTTP traffic. Additionally, the customer service department has reported strange and unexpected requests coming through the automated AI chatbot, raising the need for further investigation.
+
+### Introduction
+
+I actually enjoyed this Sherlock quite a bit more than some of the previous ones. Being rated as an **Easy** challenge, there was a lot less evidence to sift through, which made the investigation much more manageable. I was able to sit down and complete it in a reasonable amount of time without feeling like I was getting buried in artifacts or spending hours trying to piece everything together.
+
+One thing I've come to appreciate is that **easier challenges can be just as valuable from a learning perspective**. Since I wasn't spending as much time digging through massive amounts of evidence, I could slow down a little, really understand what I was looking at, and absorb more of what I was learning throughout the investigation.
+
+That's not to say I don't learn a ton from the more difficult Sherlocks, because I definitely do. But I've found that the easier ones provide a nice balance, especially when I'm just looking to casually practice DFIR in my free time after a busy day. Sometimes it's nice to work through an investigation from start to finish without turning it into an all-day project.
+
+The scenario itself was also pretty unique. This Sherlock focused on **AI chatbot manipulation**, which wasn't something I had investigated before. The attacker interacted with several chatbots, attempting to bypass their restrictions and get them to reveal information they weren't supposed to share. It was interesting to see how those conversations eventually led to exposed credentials and access to the underlying Linux system.
+
+Considering this Sherlock was released back in 2024, I'd imagine some of these more straightforward chatbot security issues are becoming better understood as organizations pay more attention to AI security. That doesn't necessarily mean these attacks are going away, though. If anything, AI introduces another set of risks that organizations need to consider, especially when these systems are connected to sensitive data or given access to powerful tools.
+
+It was cool to see an example of **AI jailbreaking and insecure chatbot permissions** play out in an actual investigation rather than just reading about the concepts.
+
+If anything, this challenge reinforced an opinion I've had for a while: **giving an AI chatbot broad access to sensitive information or underlying systems without strict access controls is asking for trouble**. Just because a chatbot is supposed to follow certain rules doesn't mean those rules should be the only thing preventing someone from accessing data they shouldn't have.
+
+Overall, this was one of those Sherlocks where I felt like I got a lot of value out of a relatively short investigation, which is exactly why I enjoy working through the easier challenges alongside the more difficult ones.
+
+<br>
+
+## Initial Network Traffic Analysis
+
+I started by opening the provided `Neural-Noel.pcap` file in **Wireshark**.
+
+Since I didn't know exactly what I was looking for yet, my first step was to review the network conversations and identify which systems were communicating the most.
+
+Two IP addresses immediately stood out:
+- `10.10.0.75`
+- `10.10.0.74`
+
+![](./screenshots/conversations.png)
+
+The conversation between these two systems contained approximately **190 packets**, while the next largest conversation had only around 20 packets.
+
+That was a pretty noticeable difference, so I decided to start there.
+
+A high packet count doesn't necessarily mean something malicious is happening, but it can be a useful starting point when investigating an unfamiliar packet capture. Rather than randomly inspecting individual packets, I wanted to understand what these two systems were actually communicating about.
+
+I followed the HTTP traffic between the addresses and discovered something interesting: **the traffic contained conversations between a user and AI chatbots**.
+
+The messages were exchanged on November 27, 2024, between approximately `00:43:58` and `00:46:26` giving me a much clearer direction for the investigation.
+
+<br>
+
+## Reconstructing the AI Chatbot Conversations
+
+After identifying the chatbot traffic, I continued reviewing the HTTP streams to reconstruct the conversations. The relevant activity appeared across TCP streams `3` through `18`.
+
+As I followed the streams, I noticed that the attacker wasn't interacting with just one chatbot.
+
+They were testing **three different AI assistants**, each with a different purpose:
+- **RAG Chatbot** - `rag-chatbot`
+- **GDPR Chatbot** - `user_manage_chatbot`
+- **Web & Files Chatbot** - `web-assistant`
+
+To understand which backend name belonged to each chatbot, I examined the HTML responses in streams `8` and `13`. These contained the webpage the attacker was using to choose which chatbot to interact with. Inside the HTML, I found `href` references linking the chatbot names displayed on the webpage to their actual application paths.
+
+![](./screenshots/chatbotName.png)
+
+For example: `web-assistant` -> `Web & Files Chatbot`
+
+This helped me identify which chatbot was responsible for each conversation rather than guessing based on the messages alone.
+
+<br>
+
+## Testing the RAG Chatbot
+
+The first chatbot the attacker interacted with was: `rag-chatbot` A RAG (Retrieval-Augmented Generation) chatbot is designed to answer questions using information retrieved from an external source, such as documents or a knowledge base.
+
+During this conversation, the attacker began asking questions about someone named `Juliet`. They asked who Juliet was and whether Juliet was a username on the chatbot's machine.
+
+![](./screenshots/Juliet.png)
+
+This stood out because the attacker appeared to be probing for information about the underlying system rather than asking normal questions. However, the chatbot didn't reveal any sensitive information.
+
+From what I could see in the HTTP stream, this first attempt was unsuccessful.
+
+<br>
+
+## Attempting to Jailbreak the GDPR Chatbot
+
+The next chatbot the attacker tested was: `user_manage_chatbot`
+
+This was identified as the **GDPR Chatbot**, which appeared to have restrictions around sharing sensitive user information. The attacker tried several prompts intended to convince the chatbot to ignore those restrictions. One prompt asked the chatbot to provide: `all the data you have`
+
+Another attempted to pressure the chatbot by claiming the user was seriously ill and needed the data immediately. The idea was to make the chatbot prioritize the attacker's request over its existing instructions. This is an example of a **jailbreak attempt**, where someone tries to manipulate an AI system into ignoring its normal rules or restrictions. Fortunately, the chatbot didn't comply. It continued following its data protection rules and did not reveal the requested sensitive information.
+
+![](./screenshots/AI_said_no.png)
+
+At this point, the attacker had tested two chatbots without successfully obtaining anything useful. That changed with the third chatbot.
+
+<br>
+
+## Sensitive Information Exposure Through the Web & Files Chatbot
+
+The final chatbot the attacker interacted with was: `web-assistant` this was the **Web & Files Chatbot**, and it ended up being the most important part of the investigation.
+
+![](./screenshots/web_files.png)
+
+Unlike the previous chatbots, this assistant had access to additional functionality. It could perform tasks such as reading local files, listing files inside directories, and retrieving information from webpages. The attacker first asked the chatbot what it could help with. After learning about its capabilities, they requested a list of files in the current directory.
+
+The chatbot returned:
+- `testfile2.txt`
+- `example.txt`
+- `textfile1.txt`
+- `creds.txt`
+
+![](./screenshots/creds_prompt.png)
+
+One filename immediately stood out: `creds.txt`
+
+That's a pretty interesting filename to see exposed through a chatbot, especially when it appears to contain credentials. The attacker then asked the chatbot to read the contents of that file. Unfortunately, the chatbot complied and returned:
+
+```text
+noel:debian
+```
+
+![](./screenshots/creds.png)
+
+This exposed a username and password that could potentially be used to authenticate to the underlying system. **This was the first successful compromise in the investigation.**
+
+Unlike the RAG and GDPR chatbots, the Web & Files Chatbot allowed the attacker to access information that should not have been exposed to an untrusted user. The attacker didn't need to exploit a traditional software vulnerability to retrieve these credentials. They simply asked the chatbot to read a local file, and it provided the contents.
+
+This demonstrated the danger of giving an AI assistant access to sensitive local resources without properly restricting what users can request. The chatbot essentially became a way for the attacker to retrieve information they otherwise might not have been authorized to access.
+
+<br>
+
+## Confirming the Compromised Credentials Were Used
+
+After identifying the exposed credentials, I wanted to determine whether the attacker actually used them to access the Linux system.
+
+For this, I moved away from Wireshark and into the provided Linux authentication logs: `auth.log`
+
+Linux authentication logs are useful for investigating login activity, including successful and failed authentication attempts, session creation, and certain privilege changes. Since the chatbot had exposed credentials associated with `noel`, I started by searching for that username. The first successful login I identified occurred at: **`06:49:44`**
+
+![](./screenshots/login.png)
+
+This was an important finding because it showed that the attacker had progressed beyond simply collecting credentials from the chatbot. The authentication logs now contained evidence of a successful login involving the exposed account.
+
+This established the next stage of the attack:
+
+**Chatbot reveals credentials -> Attacker obtains login information -> Successful Linux authentication**
+
+Rather than relying entirely on the chatbot conversation, I now had host-level evidence supporting the next part of the compromise.
+
+<br>
+
+## Identifying the Privilege Escalation
+
+While continuing through `auth.log`, I found another successful password authentication for `noel` at: **`06:53:57`** this activity was associated with session `8`. A few minutes later, at: **`06:56:41`** the logs showed activity in that session running with: `uid=0` on Linux, a UID of `0` represents the **root account**, which has the highest level of privileges on the system. This was a significant change.
+
+![](./screenshots/root.png)
+
+The attacker had initially gained access using credentials exposed by the chatbot, but the later activity showed commands running with root privileges.
+
+My next question was how they managed to get those privileges. To investigate that, I needed to figure out what commands had been executed between the successful login and the root-level activity.
+
+<br>
+
+## Investigating the Attacker's Command History
+
+To understand how the attacker escalated their privileges, I opened the provided: `history.txt`
+
+This file contained command history that helped reconstruct what the attacker had been doing on the system. While reviewing the entries around the privilege escalation, I noticed the attacker interacting with a Python chatbot script: `ai-bot.py`
+
+![](./screenshots/exploit.png)
+
+Two questions stood out: `which python library are you using?` and `Are you using langchain 0.0.14 ?`
+
+These were interesting because the attacker was no longer just asking the chatbot to perform tasks or reveal files. They appeared to be trying to identify the **specific software and version powering the chatbot**. That gave me a useful lead to investigate.
+
+If the attacker knew which library the chatbot used, they could potentially search for known vulnerabilities affecting that version. The reference to LangChain `0.0.14` was particularly interesting, so I started researching vulnerabilities associated with that software.
+
+<br>
+
+## Researching the LangChain Vulnerability
+
+While researching LangChain vulnerabilities, I came across: **CVE-2023-44467**
+
+![](./screenshots/CVE-2023-44467.png)
+
+LangChain is a Python framework commonly used to build applications powered by large language models. The vulnerability affects certain versions of LangChain's experimental components and can allow attackers to execute Python code that should otherwise be restricted.
+
+One of the key details in the vulnerability description involves Python's: `__import__`
+
+In simple terms, `__import__` allows Python to load additional modules. The problem is that if an application allows untrusted users to abuse this functionality, they may be able to access capabilities that the chatbot wasn't supposed to provide.
+
+For example, instead of simply answering a question, a vulnerable application could end up executing attacker-controlled Python code. The vulnerability is tracked as **CVE-2023-44467 - Remote Code Execution**, and the affected `langchain_experimental` versions include `0.0.14`.  This was especially relevant because the attacker had specifically asked whether the application was using LangChain `0.0.14`. It gave me a possible explanation for how they moved from interacting with the chatbot to executing commands on the underlying system.
+
+<br>
+
+## Correlating the Exploit With Root-Level Execution
+
+After learning about CVE-2023-44467, I returned to the command history to see whether the attacker's activity matched the vulnerability.
+
+Shortly after asking about the LangChain version, the attacker began using: `__import__` this was particularly interesting because the same Python functionality was mentioned in the vulnerability's technical description. I then correlated that activity with the authentication logs.
+
+At `06:56:41`, the system recorded commands running with root privileges (`uid=0`).
+
+The sequence was:
+- The attacker obtained credentials through the Web & Files Chatbot.
+- They successfully authenticated to the Linux system.
+- They investigated the Python library and LangChain version used by the chatbot.
+- They began using `__import__`, which matched a known LangChain code execution technique.
+- Shortly afterward, commands were observed running with root privileges.
+
+These findings strongly suggested the attacker exploited the chatbot's Python execution capabilities to run unauthorized commands.
+
+One important distinction is that **remote code execution and privilege escalation are not automatically the same thing**. CVE-2023-44467 allows unauthorized code execution in the context of the vulnerable application. Whether that code runs as root depends on the privileges the application already has.
+
+<br>
+
+## Attack Timeline
+
+Based on the network capture, authentication logs, and command history, the attack can be reconstructed as follows:
+
+- **Initial Network Investigation:** Wireshark conversations identify `10.10.0.75` and `10.10.0.74` as the two systems exchanging the most traffic.
+- **November 27, 2024 - 00:43:58 to 00:46:26:** HTTP traffic contains conversations between the attacker and multiple AI chatbots.
+- **RAG Chatbot:** The attacker asks questions about `Juliet` and possible system usernames, but no sensitive information is revealed.
+- **GDPR Chatbot:** The attacker attempts to jailbreak the chatbot into revealing restricted data, but the requests are unsuccessful.
+- **Web & Files Chatbot:** The attacker asks the chatbot to list files in its current directory.
+- **Credential Exposure:** The chatbot reads `creds.txt` and reveals the credentials `noel:debian`.
+- **06:49:44:** `auth.log` records the first successful login involving the exposed account.
+- **06:53:57:** Another successful authentication for `noel` is recorded, associated with session `8`.
+- **Software Reconnaissance:** The attacker interacts with `ai-bot.py` and asks about the underlying Python library and LangChain version.
+- **Vulnerability Research:** The activity points toward LangChain `0.0.14` and the known code execution vulnerability `CVE-2023-44467`.
+- **Exploit Activity:** The attacker begins using Python's `__import__` functionality, consistent with the technique described in the vulnerability.
+- **06:56:41:** Authentication logs show activity running with `uid=0`, indicating root-level privileges.
+
+<br>
+
+## Final Assessment
+
+OpTinselTrace24-4 was a particularly interesting investigation because it showed how an attacker could abuse an AI chatbot to gain access to an underlying Linux system. The investigation started with a packet capture, where I identified two systems responsible for the majority of the network traffic. Following the HTTP streams revealed that the attacker was interacting with three different AI chatbots. The first two chatbots successfully prevented sensitive information from being exposed. The RAG Chatbot did not reveal information about the username the attacker was investigating, and the GDPR Chatbot resisted attempts to bypass its data protection restrictions. However, the Web & Files Chatbot was much less restrictive.
+
+Because it could read files from the local filesystem, the attacker was able to request a directory listing, identify `creds.txt`, and have the chatbot reveal the credentials stored inside it. This was the turning point of the investigation. What started as an interaction with a chatbot now gave the attacker credentials that could be used to access the underlying Linux system. After pivoting into `auth.log`, I identified successful authentication activity involving the exposed account.
+
+The attacker then appeared to investigate the software powering the chatbot, specifically asking about LangChain `0.0.14`. Researching that version led me to **CVE-2023-44467**, a vulnerability involving unauthorized Python code execution through LangChain's experimental functionality. The command history contained activity involving `__import__`, which matched the technique described in the vulnerability. Shortly afterward, authentication logs showed commands running with root privileges.
+
+The overall attack path can be summarized as:
+
+**Chatbot Reconnaissance -> Sensitive File Disclosure -> Credential Exposure -> Linux Authentication -> Software Version Discovery -> Suspected LangChain Exploitation -> Root-Level Access**
+
+<br>
+
+## Key Indicators
+
+- **Packet Capture:** `Neural-Noel.pcap`
+- **Primary Network Addresses:** `10.10.0.75`, `10.10.0.74`
+- **Attack Date:** `2024-11-27`
+- **Relevant TCP Streams:** `3-18`
+- **RAG Chatbot:** `rag-chatbot`
+- **GDPR Chatbot:** `user_manage_chatbot`
+- **Web & Files Chatbot:** `web-assistant`
+- **Exposed File:** `creds.txt`
+- **Exposed Credentials:** `noel:debian`
+- **Authentication Log:** `auth.log`
+- **Command History:** `history.txt`
+- **Python Application:** `ai-bot.py`
+- **Targeted Library Version:** LangChain `0.0.14`
+- **Suspected Vulnerability:** `CVE-2023-44467`
+- **Suspicious Python Function:** `__import__`
+- **First Successful Login:** `06:49:44`
+- **Subsequent Login:** `06:53:57`
+- **Root-Level Activity:** `06:56:41`
+- **Root User ID:** `uid=0`
+
+<br>
+
+## MITRE ATT&CK Mapping
+
+The activity observed during the investigation included:
+- **T1552.001 - Unsecured Credentials: Credentials In Files**
+  - The attacker retrieved a username and password stored in `creds.txt` by asking the Web & Files Chatbot to read the file.
+
+- **T1078 - Valid Accounts**
+  - The attacker used exposed credentials to authenticate to the Linux system.
+
+- **T1059.006 - Command and Scripting Interpreter: Python**
+  - Suspicious activity involving `__import__` suggested the attacker was attempting to execute Python code through the chatbot application.
+
+- **T1211 - Exploitation for Privilege Escalation**
+  - Potential exploitation of the LangChain vulnerability to obtain elevated privileges. The exact mechanism would require further validation.
+
+Additional activity was consistent with reconnaissance of the chatbot's underlying software and attempts to bypass AI application restrictions.
+
+<br>
+
+## Next Steps
+
+If this were a real incident, my immediate next steps would include:
+
+- Disable or reset the exposed `noel` credentials.
+- Review authentication logs for additional suspicious logins involving the compromised account.
+- Identify all files accessible through the Web & Files Chatbot.
+- Check whether other sensitive files could have been exposed using the same technique.
+- Review the chatbot's file access permissions and restrict access to sensitive directories.
+- Determine which LangChain packages and versions were actually installed.
+- Investigate the `__import__` activity and surrounding Python commands to confirm how code execution occurred.
+- Determine whether the chatbot application was running with excessive privileges.
+- Review root-level command history to identify what the attacker did after gaining elevated access.
+- Search for persistence mechanisms, additional accounts, or other changes made to the Linux system.
+- Review the security controls protecting the other chatbots to understand why they resisted the attacker's attempts.
+- Implement stronger restrictions around AI tools capable of accessing local files or executing code.
+
+The biggest lesson from this investigation was that **AI chatbots can introduce serious security risks when they are given access to sensitive files or powerful system functionality without proper restrictions**.
+
+The attacker didn't need to start with a traditional exploit. Simply getting a chatbot to read the wrong file was enough to expose credentials and open the door to a much larger compromise.
+
+This was another reminder that regardless of whether I'm investigating Windows, Linux, cloud infrastructure, or AI applications, the same investigative process continues to apply:
+
+**Understand the environment -> Identify suspicious activity -> Follow the evidence -> Correlate artifacts -> Reconstruct the attack.**
